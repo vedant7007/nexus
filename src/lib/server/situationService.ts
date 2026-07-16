@@ -1,0 +1,137 @@
+/**
+ * @module server/situationService
+ *
+ * Responsibility: compose the simulator, the engine, and the AI into the
+ * answers the dashboard asks for.
+ *
+ * The ordering in every function here is the same and is the point: simulate,
+ * assess deterministically, *then* hand the finished facts to the AI. The AI is
+ * always last and always optional.
+ */
+import { type Recommendation, generateBriefing, generateReasoning } from '../ai/briefing';
+import type { AiMode } from '../ai/briefing';
+import { mitigationsFor } from '../engine/flow';
+import { buildSituationReport } from '../engine/situation';
+import type { SituationReport } from '../engine/types';
+import { type ScenarioId, isScenarioId } from '../sim/scenarios';
+import { simulate, tickForElapsed } from '../sim/simulator';
+
+/** Most risks we will spend an AI call on per request. */
+const MAX_AI_RECOMMENDATIONS = 3;
+
+/** Default scenario when none is requested. */
+export const DEFAULT_SCENARIO: ScenarioId = 'normal';
+
+/**
+ * Narrows an untrusted scenario query parameter.
+ *
+ * @param value - The raw query value.
+ * @returns A valid scenario id, defaulting when the value is absent or unknown.
+ */
+export function resolveScenario(value: string | null): ScenarioId {
+  return value !== null && isScenarioId(value) ? value : DEFAULT_SCENARIO;
+}
+
+/**
+ * Resolves the tick to render.
+ *
+ * The client passes its session start time so the feed advances smoothly; an
+ * explicit tick overrides it, which is what makes the demo and the E2E suite
+ * able to jump straight to an interesting moment.
+ *
+ * @param tickParam - Explicit tick, if requested.
+ * @param startedAtParam - Session start epoch ms, if provided.
+ * @param now - Current epoch ms.
+ * @returns The tick to simulate.
+ */
+export function resolveTick(
+  tickParam: string | null,
+  startedAtParam: string | null,
+  now: number = Date.now(),
+): number {
+  if (tickParam !== null) {
+    const parsed = Number.parseInt(tickParam, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  if (startedAtParam !== null) {
+    const startedAt = Number.parseInt(startedAtParam, 10);
+    if (Number.isFinite(startedAt)) return tickForElapsed(startedAt, now);
+  }
+  return 0;
+}
+
+/**
+ * Produces the deterministic situation report for a scenario and tick.
+ *
+ * @param scenario - Scenario to simulate.
+ * @param tick - Tick to simulate.
+ * @param generatedAt - ISO timestamp to stamp on the report.
+ * @returns The report. Contains no AI output.
+ */
+export function situationFor(
+  scenario: ScenarioId,
+  tick: number,
+  generatedAt: string = new Date().toISOString(),
+): SituationReport {
+  return buildSituationReport(simulate(scenario, tick), generatedAt);
+}
+
+/** Recommendations plus the mode that produced their reasoning. */
+export interface RecommendationsResult {
+  items: Recommendation[];
+  mode: AiMode;
+}
+
+/**
+ * Builds ranked recommendations for the top risks.
+ *
+ * The action and the impact come from the engine and are identical in both
+ * modes. Only the reasoning prose differs, so a rate-limited or failed AI call
+ * costs fluency and nothing else.
+ *
+ * @param report - The deterministic report.
+ * @returns Recommendations, most urgent first, and the overall mode. Reports
+ *   'rule' if any reasoning fell back, so the UI badge never overclaims.
+ */
+export async function recommendationsFor(
+  report: SituationReport,
+): Promise<RecommendationsResult> {
+  const targets = report.risks.slice(0, MAX_AI_RECOMMENDATIONS);
+
+  const built = await Promise.all(
+    targets.map(async (risk) => {
+      const mitigations = mitigationsFor(risk, report.snapshot);
+      const chosen = mitigations[0];
+      if (chosen === undefined) return null;
+
+      const { reasoning, mode } = await generateReasoning(risk, chosen, mitigations.slice(1));
+      const item: Recommendation = {
+        riskId: risk.id,
+        subjectName: risk.subjectName,
+        level: risk.level,
+        action: chosen.action,
+        impact: chosen.impact,
+        reasoning,
+      };
+      return { item, mode };
+    }),
+  );
+
+  const present = built.filter((entry): entry is { item: Recommendation; mode: AiMode } => entry !== null);
+
+  return {
+    items: present.map((entry) => entry.item),
+    // Honest badge: 'ai' only when every reasoning actually came from the model.
+    mode: present.length > 0 && present.every((entry) => entry.mode === 'ai') ? 'ai' : 'rule',
+  };
+}
+
+/**
+ * Produces the AI situational briefing for a report.
+ *
+ * @param report - The deterministic report.
+ * @returns The briefing and its mode.
+ */
+export async function briefingFor(report: SituationReport): ReturnType<typeof generateBriefing> {
+  return generateBriefing(report);
+}
