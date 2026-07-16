@@ -14,7 +14,12 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     coverage: {
-      provider: 'v8',
+      // Istanbul rather than v8: the v8 provider synthesises a phantom `get`
+      // accessor at line 1 of every ES module (the namespace getter) and counts
+      // it as an uncovered function, which silently caps a small module's
+      // function coverage below 100% no matter how it is tested. Istanbul
+      // instruments the source itself and reports what is actually there.
+      provider: 'istanbul',
       reporter: ['text', 'lcov', 'json-summary'],
       include: ['src/**/*.ts', 'src/**/*.tsx'],
       exclude: [
