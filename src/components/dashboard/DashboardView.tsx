@@ -36,9 +36,14 @@ export function DashboardView() {
 
   const snapshot = useSnapshot(scenario, tick);
   const situation = useSituation(scenario, tick);
-  const briefing = useBriefing({ scenario, tick, kind: 'situation' });
+
+  // Keep the AI panels coherent with the live status: when the overall level
+  // changes, re-fetch them immediately rather than waiting out their slow
+  // cadence. This is what makes the escalation read as one coordinated moment.
+  const level = situation.data?.overall;
+  const briefing = useBriefing({ scenario, tick, kind: 'situation', revalidateKey: level });
   const sustainability = useBriefing({ scenario, tick, kind: 'sustainability' });
-  const recommendations = useRecommendations(scenario, tick);
+  const recommendations = useRecommendations(scenario, tick, level);
 
   const handleScenarioChange = useCallback((next: ScenarioId) => {
     setScenario(next);

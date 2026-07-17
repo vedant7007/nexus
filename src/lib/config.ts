@@ -19,8 +19,17 @@ export const GEMINI_MODEL = 'gemini-2.5-flash';
 /** Hard ceiling on a single Gemini call, in milliseconds. */
 export const AI_TIMEOUT_MS = 4_000;
 
-/** AI requests permitted per authenticated user per minute. */
-export const AI_RATE_LIMIT_PER_MIN = 15;
+/**
+ * AI requests permitted per authenticated user per minute.
+ *
+ * Sized for the dashboard's real shape, not a single endpoint. Three AI panels
+ * (briefing, sustainability, recommendations) refresh on ~20–25s cadences —
+ * roughly 9 calls/min at rest — and each re-fetches when the overall risk level
+ * changes so the panels stay coherent with the live status during an escalation.
+ * 30/min leaves comfortable headroom for that while still firmly capping abuse
+ * of the Gemini budget; an earlier 15 throttled ordinary operation.
+ */
+export const AI_RATE_LIMIT_PER_MIN = 30;
 
 const serverSchema = z.object({
   /**

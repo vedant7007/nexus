@@ -17,3 +17,4 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 serviceAccount*.json
 *-key.json
+screenshots/

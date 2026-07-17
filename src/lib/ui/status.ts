@@ -24,6 +24,12 @@ export interface StatusPresentation {
   badgeClass: string;
   /** Tailwind class for a solid bar or dot. */
   fillClass: string;
+  /**
+   * The raw status colour as a CSS value, for contexts that set a colour
+   * directly rather than via a class — notably SVG `fill`, where a Tailwind
+   * `bg-*` class does nothing.
+   */
+  color: string;
   /** Screen-reader phrasing, spelled out rather than abbreviated. */
   announcement: string;
 }
@@ -36,6 +42,7 @@ const PRESENTATION: Record<RiskLevel, StatusPresentation> = {
     badgeClass:
       'bg-[var(--color-status-normal-bg)] text-[var(--color-status-normal-text)] border-[var(--color-status-normal)]',
     fillClass: 'bg-[var(--color-status-normal)]',
+    color: 'var(--color-status-normal)',
     announcement: 'Normal',
   },
   elevated: {
@@ -45,6 +52,7 @@ const PRESENTATION: Record<RiskLevel, StatusPresentation> = {
     badgeClass:
       'bg-[var(--color-status-elevated-bg)] text-[var(--color-status-elevated-text)] border-[var(--color-status-elevated)]',
     fillClass: 'bg-[var(--color-status-elevated)]',
+    color: 'var(--color-status-elevated)',
     announcement: 'Elevated',
   },
   high: {
@@ -54,6 +62,7 @@ const PRESENTATION: Record<RiskLevel, StatusPresentation> = {
     badgeClass:
       'bg-[var(--color-status-high-bg)] text-[var(--color-status-high-text)] border-[var(--color-status-high)]',
     fillClass: 'bg-[var(--color-status-high)]',
+    color: 'var(--color-status-high)',
     announcement: 'High',
   },
   critical: {
@@ -63,6 +72,7 @@ const PRESENTATION: Record<RiskLevel, StatusPresentation> = {
     badgeClass:
       'bg-[var(--color-status-critical-bg)] text-[var(--color-status-critical-text)] border-[var(--color-status-critical)]',
     fillClass: 'bg-[var(--color-status-critical)]',
+    color: 'var(--color-status-critical)',
     announcement: 'Critical',
   },
 };

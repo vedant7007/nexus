@@ -83,9 +83,12 @@ export function StadiumMap({ zones }: StadiumMapProps) {
               width={block.width}
               height={block.height}
               rx="2"
-              className={`${status.fillClass} transition-opacity duration-500`}
-              fill="currentColor"
-              opacity={zone === undefined ? 0.15 : 0.35 + Math.min(zone.densityPct, 100) / 155}
+              className="transition-opacity duration-500"
+              // A Tailwind bg-* class does nothing to an SVG fill, so the colour
+              // is applied directly. Opacity scales with density so a filling
+              // zone visibly deepens toward its status colour.
+              fill={status.color}
+              opacity={zone === undefined ? 0.2 : 0.45 + Math.min(zone.densityPct, 100) / 180}
             />
           );
         })}

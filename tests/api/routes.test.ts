@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resetConfigCache } from '@/lib/config';
+import { AI_RATE_LIMIT_PER_MIN, resetConfigCache } from '@/lib/config';
 import { resetRateLimits } from '@/lib/server/rateLimit';
 import { InMemoryIncidentRepository } from '@/lib/server/repository';
 import { setRepositoryForTests } from '@/lib/server/repositoryProvider';
@@ -205,20 +205,22 @@ describe('POST /api/ai/briefing', () => {
   });
 
   it('rate-limits after the configured number of calls', async () => {
+    // Derived from the constant, not hardcoded: the test tracks the limit
+    // wherever it is tuned rather than pinning a number that silently rots.
     const results: number[] = [];
-    for (let i = 0; i < 17; i += 1) {
+    for (let i = 0; i < AI_RATE_LIMIT_PER_MIN + 2; i += 1) {
       const response = await briefingPost(
         req('http://t/api/ai/briefing', { method: 'POST', body }),
       );
       results.push(response.status);
     }
 
-    expect(results.filter((s) => s === 200)).toHaveLength(15);
+    expect(results.filter((s) => s === 200)).toHaveLength(AI_RATE_LIMIT_PER_MIN);
     expect(results.filter((s) => s === 429).length).toBeGreaterThan(0);
   });
 
   it('returns a rate_limited code with a retry hint', async () => {
-    for (let i = 0; i < 15; i += 1) {
+    for (let i = 0; i < AI_RATE_LIMIT_PER_MIN; i += 1) {
       await briefingPost(req('http://t/api/ai/briefing', { method: 'POST', body }));
     }
 

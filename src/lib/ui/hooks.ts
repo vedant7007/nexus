@@ -87,6 +87,15 @@ export interface BriefingOptions {
   scenario: ScenarioId;
   tick: number;
   kind: 'situation' | 'sustainability';
+  /**
+   * A value that, when it changes, forces an immediate refresh outside the slow
+   * cadence. The dashboard passes the overall risk level, so the moment a
+   * scenario escalates (elevated → critical) the AI panels re-fetch and stay
+   * coherent with the live status pill instead of describing a stale, calmer
+   * situation for another 20 seconds. The tick deliberately is *not* such a
+   * trigger — it moves every few seconds and would empty the AI budget.
+   */
+  revalidateKey?: string;
 }
 
 /**
@@ -96,12 +105,12 @@ export interface BriefingOptions {
  * The tick is read at request time rather than being a dependency, so the
  * briefing does not re-fire every time the clock advances.
  *
- * @param options - Scenario, tick, and which briefing to fetch.
+ * @param options - Scenario, tick, kind, and an optional revalidation key.
  * @returns The briefing resource.
  */
 export function useBriefing(options: BriefingOptions): PolledResource<BriefingDto> {
   const getToken = useAuthToken();
-  const { scenario, kind } = options;
+  const { scenario, kind, revalidateKey } = options;
 
   // The tick moves every few seconds; capturing it as a dependency would
   // restart the poll each time and defeat the whole point of a slow cadence.
@@ -114,7 +123,12 @@ export function useBriefing(options: BriefingOptions): PolledResource<BriefingDt
         body: { scenario, tick: tickRef.current, kind },
         signal,
       }),
-    [scenario, kind, getToken, tickRef],
+    // revalidateKey is intentionally a dependency it does not reference: a
+    // change to it must rebuild the fetcher so the poll refetches. This is the
+    // standard "revalidation key" pattern; the exhaustive-deps rule cannot see
+    // the intent, so it is silenced here with the reason stated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scenario, kind, getToken, tickRef, revalidateKey],
   );
 
   return usePolledResource(fetcher, BRIEFING_REFRESH_MS);
@@ -125,11 +139,14 @@ export function useBriefing(options: BriefingOptions): PolledResource<BriefingDt
  *
  * @param scenario - Active scenario.
  * @param tick - Simulation tick.
+ * @param revalidateKey - Changing this forces an immediate refresh; the
+ *   dashboard passes the overall risk level so recommendations track escalation.
  * @returns The recommendations resource.
  */
 export function useRecommendations(
   scenario: ScenarioId,
   tick: number,
+  revalidateKey?: string,
 ): PolledResource<RecommendationsDto> {
   const getToken = useAuthToken();
 
@@ -143,7 +160,9 @@ export function useRecommendations(
         getToken,
         { signal },
       ),
-    [scenario, getToken, tickRef],
+    // See the note in useBriefing: revalidateKey drives refetch by design.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scenario, getToken, tickRef, revalidateKey],
   );
 
   return usePolledResource(fetcher, RECOMMENDATIONS_REFRESH_MS);
