@@ -122,7 +122,10 @@ describe('decide — the engine owns the outcome', () => {
   });
 
   it('escalates any incident in a critical zone', () => {
-    const decision = decide('facilities', ['a tap is leaking'], { ...CONTEXT, zoneIsCritical: true });
+    const decision = decide('facilities', ['a tap is leaking'], {
+      ...CONTEXT,
+      zoneIsCritical: true,
+    });
     expect(decision.severity).toBe('SEV1');
   });
 

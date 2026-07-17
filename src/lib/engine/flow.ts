@@ -23,8 +23,14 @@ export const OVERFLOW_LANE_UPLIFT = 0.2;
 /** Additional throughput, as a fraction, from surging staff to a gate. */
 export const STAFF_SURGE_UPLIFT = 0.15;
 
-/** Reroute shares the engine will consider, smallest workable first. */
-const REROUTE_STEPS: readonly number[] = [0.1, 0.15, 0.2, 0.3];
+/**
+ * Reroute shares the engine will consider, smallest workable first.
+ *
+ * Stops at 50%: sending more than half a gate's arrivals elsewhere stops being
+ * a reroute and becomes a gate closure, which is a different decision with
+ * different consequences and is not this model's to make.
+ */
+const REROUTE_STEPS: readonly number[] = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5];
 
 /** Rounds to one decimal place. */
 function round1(value: number): number {

@@ -9,9 +9,30 @@ function snapshot(resources: Partial<Resources> = {}): Snapshot {
     tMinusKickoffMin: 10,
     tick: 50,
     zones: [
-      { id: 'z1', name: 'North Lower', occupancy: 6_000, capacity: 10_000, densityPct: 60, netFlowPerMin: 0 },
-      { id: 'z3', name: 'East Concourse', occupancy: 7_600, capacity: 8_000, densityPct: 95, netFlowPerMin: 0 },
-      { id: 'z4', name: 'East Stand', occupancy: 10_000, capacity: 11_500, densityPct: densityPct(10_000, 11_500), netFlowPerMin: 0 },
+      {
+        id: 'z1',
+        name: 'North Lower',
+        occupancy: 6_000,
+        capacity: 10_000,
+        densityPct: 60,
+        netFlowPerMin: 0,
+      },
+      {
+        id: 'z3',
+        name: 'East Concourse',
+        occupancy: 7_600,
+        capacity: 8_000,
+        densityPct: 95,
+        netFlowPerMin: 0,
+      },
+      {
+        id: 'z4',
+        name: 'East Stand',
+        occupancy: 10_000,
+        capacity: 11_500,
+        densityPct: densityPct(10_000, 11_500),
+        netFlowPerMin: 0,
+      },
     ],
     gates: [],
     transit: [],
@@ -84,7 +105,10 @@ describe('sustainabilitySummary', () => {
   });
 
   it('tolerates a zero baseline without dividing by zero', () => {
-    const summary = sustainabilitySummary(snapshot({ energyKwh: 500 }), { ...BASELINE, energyKwh: 0 });
+    const summary = sustainabilitySummary(snapshot({ energyKwh: 500 }), {
+      ...BASELINE,
+      energyKwh: 0,
+    });
     expect(summary.energyDeltaPct).toBe(0);
   });
 

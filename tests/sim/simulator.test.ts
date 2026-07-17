@@ -323,7 +323,9 @@ describe('simulate — scenarios reach their intended stress state', () => {
 
   it('heat_wave escalates crowd risk above the same density on a normal day', () => {
     const hot = buildSituationReport(simulate('heat_wave', 75), AT);
-    expect(hot.risks.some((r) => r.detail.includes('heat stress'))).toBe(true);
+    expect(
+      hot.risks.some((r) => r.detail.includes('Heat and humidity raise this by one band')),
+    ).toBe(true);
   });
 
   it('heat_wave raises energy draw well above a normal matchday', () => {
@@ -388,7 +390,7 @@ describe('simulate — conservation of people', () => {
     const gateC = resolved.find((r) => r.gate.id === 'gC');
     const gateA = resolved.find((r) => r.gate.id === 'gA');
 
-    expect(gateC?.throughputPerMin).toBeCloseTo((gateC?.gate.baseThroughputPerMin ?? 0) * 0.75, 5);
+    expect(gateC?.throughputPerMin).toBeCloseTo((gateC?.gate.baseThroughputPerMin ?? 0) * 0.85, 5);
     expect(gateA?.throughputPerMin).toBe(gateA?.gate.baseThroughputPerMin);
   });
 
@@ -450,6 +452,6 @@ describe('simulate — conservation of people', () => {
     const stuck = surge.gates.reduce((sum, g) => sum + g.queueLen, 0);
 
     expect(surgeInside).toBeLessThan(normalInside);
-    expect(stuck).toBeGreaterThan(5_000);
+    expect(stuck).toBeGreaterThan(2_000);
   });
 });

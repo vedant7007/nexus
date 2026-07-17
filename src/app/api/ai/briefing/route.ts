@@ -2,7 +2,12 @@ import { z } from 'zod';
 
 import { generateSustainabilityInsight } from '@/lib/ai/briefing';
 import { withRoute } from '@/lib/server/handler';
-import { briefingFor, resolveScenario, resolveTick, situationFor } from '@/lib/server/situationService';
+import {
+  briefingFor,
+  resolveScenario,
+  resolveTick,
+  situationFor,
+} from '@/lib/server/situationService';
 import { isScenarioId } from '@/lib/sim/scenarios';
 
 const bodySchema = z.object({

@@ -110,7 +110,11 @@ describe('classifySeverity — the LLM cannot under-triage', () => {
   });
 
   it('scans every provided text, not just the first', () => {
-    const result = classifySeverity('facilities', ['nothing here', 'actually, unconscious'], FIRST_AID);
+    const result = classifySeverity(
+      'facilities',
+      ['nothing here', 'actually, unconscious'],
+      FIRST_AID,
+    );
     expect(result.severity).toBe('SEV1');
   });
 

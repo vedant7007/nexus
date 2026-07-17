@@ -36,7 +36,11 @@ const repo = new InMemoryIncidentRepository();
 function req(url: string, init: RequestInit = {}): Request {
   return new Request(url, {
     ...init,
-    headers: { authorization: 'Bearer test-token', 'content-type': 'application/json', ...init.headers },
+    headers: {
+      authorization: 'Bearer test-token',
+      'content-type': 'application/json',
+      ...init.headers,
+    },
   });
 }
 
@@ -203,7 +207,9 @@ describe('POST /api/ai/briefing', () => {
   it('rate-limits after the configured number of calls', async () => {
     const results: number[] = [];
     for (let i = 0; i < 17; i += 1) {
-      const response = await briefingPost(req('http://t/api/ai/briefing', { method: 'POST', body }));
+      const response = await briefingPost(
+        req('http://t/api/ai/briefing', { method: 'POST', body }),
+      );
       results.push(response.status);
     }
 
@@ -261,7 +267,9 @@ describe('POST /api/incidents', () => {
   });
 
   it('creates a triaged incident', async () => {
-    const response = await incidentsPost(req('http://t/api/incidents', { method: 'POST', body: spanish }));
+    const response = await incidentsPost(
+      req('http://t/api/incidents', { method: 'POST', body: spanish }),
+    );
     expect(response.status).toBe(200);
 
     const incident = await response.json();
@@ -300,7 +308,9 @@ describe('POST /api/incidents', () => {
       },
     });
 
-    const response = await incidentsPost(req('http://t/api/incidents', { method: 'POST', body: spanish }));
+    const response = await incidentsPost(
+      req('http://t/api/incidents', { method: 'POST', body: spanish }),
+    );
     const incident = await response.json();
 
     expect(incident.severity).toBe('SEV1');
@@ -310,7 +320,9 @@ describe('POST /api/incidents', () => {
   it('records SEV1 with the AI down entirely', async () => {
     generateJson.mockResolvedValue({ ok: false, reason: 'upstream_error', detail: 'down' });
 
-    const response = await incidentsPost(req('http://t/api/incidents', { method: 'POST', body: spanish }));
+    const response = await incidentsPost(
+      req('http://t/api/incidents', { method: 'POST', body: spanish }),
+    );
     const incident = await response.json();
 
     expect(incident.mode).toBe('rule');

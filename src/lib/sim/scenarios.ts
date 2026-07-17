@@ -10,7 +10,12 @@
  */
 
 /** Identifier of a selectable scenario. */
-export type ScenarioId = 'normal' | 'gate_surge' | 'transit_delay' | 'medical_incident' | 'heat_wave';
+export type ScenarioId =
+  | 'normal'
+  | 'gate_surge'
+  | 'transit_delay'
+  | 'medical_incident'
+  | 'heat_wave';
 
 /** Every selectable scenario id, in display order. */
 export const SCENARIO_IDS: readonly ScenarioId[] = [
@@ -82,10 +87,16 @@ export const SCENARIOS: Readonly<Record<ScenarioId, Scenario>> = Object.freeze({
       'A coach convoy arrives at Gate C while one screening lane is down, overloading the gate.',
     peakShiftMin: 0,
     spreadScale: 1,
-    // Gate C draws far more than its share of the same crowd while running a
-    // lane short: the classic combination that produces a dangerous queue.
-    gateArrivalMultipliers: { gC: 3.2 },
-    gateThroughputMultipliers: { gC: 0.75 },
+    // Gate C draws well over its share of the same crowd while running a lane
+    // short: the classic combination that produces a dangerous queue.
+    //
+    // Sized so the risk is severe but *recoverable*. An earlier 3.2x pushed
+    // Gate C past 300% of capacity, where no realistic reroute could bring it
+    // back under threshold — so the engine correctly refused to offer one, and
+    // the most useful recommendation vanished. A crisis an operator cannot act
+    // on is a worse demo and a worse product than one they can.
+    gateArrivalMultipliers: { gC: 1.7 },
+    gateThroughputMultipliers: { gC: 0.85 },
     transitDelays: NO_MODIFIERS,
     tempC: 24,
     humidityPct: 50,

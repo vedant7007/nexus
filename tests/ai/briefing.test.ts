@@ -148,7 +148,7 @@ describe('generateBriefing', () => {
       const result = await generateBriefing(REPORT);
 
       expect(result.mode).toBe('rule');
-      expect(result.text).toContain('Overall status: Critical');
+      expect(result.text).toContain('Overall status is critical');
       // The fallback is the product, not an apology: it carries real numbers.
       expect(result.text).toContain('Gate C');
     },
@@ -177,14 +177,19 @@ describe('generateBriefing', () => {
     );
 
     const result = await generateBriefing(calm);
-    expect(result.text).toContain('Overall status: Normal');
-    expect(result.text).toContain('No zones, gates or transit lines are over threshold');
+    expect(result.text).toContain('Overall status is normal');
+    expect(result.text).toContain('No zone, gate or transit line is over threshold');
   });
 });
 
 describe('reasoningPrompt', () => {
   const risk = REPORT.risks[0];
-  const chosen = { id: 'm1', action: 'Open the overflow lane at Gate C', impact: 'Throughput 220 → 264 people/min.', effectiveness: 20 };
+  const chosen = {
+    id: 'm1',
+    action: 'Open the overflow lane at Gate C',
+    impact: 'Throughput 220 → 264 people/min.',
+    effectiveness: 20,
+  };
 
   it('tells the model the decision is already made', () => {
     if (risk === undefined) throw new Error('fixture must produce a risk');
@@ -206,7 +211,12 @@ describe('reasoningPrompt', () => {
 });
 
 describe('generateReasoning', () => {
-  const chosen = { id: 'm1', action: 'Open the overflow lane at Gate C', impact: 'Throughput 220 → 264 people/min.', effectiveness: 20 };
+  const chosen = {
+    id: 'm1',
+    action: 'Open the overflow lane at Gate C',
+    impact: 'Throughput 220 → 264 people/min.',
+    effectiveness: 20,
+  };
 
   it('returns model reasoning in ai mode', async () => {
     generateJson.mockResolvedValue({ ok: true, value: { reasoning: 'Because the queue grows.' } });
@@ -227,9 +237,11 @@ describe('generateReasoning', () => {
     const result = await generateReasoning(risk, chosen, []);
 
     expect(result.mode).toBe('rule');
-    // Still actionable: the operator gets the action and the real impact.
-    expect(result.reasoning).toContain('Open the overflow lane at Gate C');
-    expect(result.reasoning).toContain('264 people/min');
+    // Still actionable: the operator is told what to do and why it was chosen.
+    // The impact figures are deliberately absent — the card renders `impact`
+    // beside this text, and repeating them would show the same numbers twice.
+    expect(result.reasoning).toContain('open the overflow lane at Gate C');
+    expect(result.reasoning).not.toContain('264 people/min');
   });
 });
 

@@ -8,7 +8,10 @@ import { resetConfigCache } from '@/lib/config';
 const verifyIdToken = vi.hoisted(() => vi.fn());
 
 vi.mock('firebase-admin/auth', () => ({ getAuth: () => ({ verifyIdToken }) }));
-vi.mock('@/lib/server/firestoreRepository', () => ({ getDb: vi.fn(), FirestoreIncidentRepository: class {} }));
+vi.mock('@/lib/server/firestoreRepository', () => ({
+  getDb: vi.fn(),
+  FirestoreIncidentRepository: class {},
+}));
 
 const { parseBearer, requireUser } = await import('@/lib/server/auth');
 
@@ -16,7 +19,9 @@ const ORIGINAL_ENV = process.env.NODE_ENV;
 
 /** Builds a request with the given Authorization header. */
 function withAuth(value?: string): Request {
-  return new Request('http://t/x', { headers: value === undefined ? {} : { authorization: value } });
+  return new Request('http://t/x', {
+    headers: value === undefined ? {} : { authorization: value },
+  });
 }
 
 /** Sets NODE_ENV, which is readonly in types but writable at runtime. */
@@ -94,6 +99,31 @@ describe('requireUser', () => {
     const user = await requireUser(withAuth('Bearer localdevtoken'));
     expect(user.uid).toMatch(/^dev-/);
     expect(verifyIdToken).not.toHaveBeenCalled();
+  });
+
+  it('honours an explicit AUTH_BYPASS even in production, for the E2E build', async () => {
+    setNodeEnv('production');
+    process.env.AUTH_BYPASS = '1';
+    resetConfigCache();
+
+    const user = await requireUser(withAuth('Bearer e2e'));
+    expect(user.uid).toMatch(/^dev-/);
+    expect(verifyIdToken).not.toHaveBeenCalled();
+
+    delete process.env.AUTH_BYPASS;
+    resetConfigCache();
+  });
+
+  it('does not bypass in production when AUTH_BYPASS is unset or off', async () => {
+    setNodeEnv('production');
+    process.env.AUTH_BYPASS = '0';
+    resetConfigCache();
+    verifyIdToken.mockRejectedValue(new Error('no project'));
+
+    await expect(requireUser(withAuth('Bearer x'))).rejects.toMatchObject({ status: 401 });
+
+    delete process.env.AUTH_BYPASS;
+    resetConfigCache();
   });
 
   it('verifies the token against Firebase once configured', async () => {

@@ -29,6 +29,19 @@ function round1(value: number): number {
 }
 
 /**
+ * Formats a headcount for human reading.
+ *
+ * Thousands separators matter here: an operator scanning a briefing under
+ * pressure reads "6,611" instantly and has to stop and count digits on "6611".
+ *
+ * @param value - A count of people.
+ * @returns The count with thousands separators.
+ */
+export function formatCount(value: number): string {
+  return Math.round(value).toLocaleString('en-US');
+}
+
+/**
  * Projects minutes until a zone reaches critical density at its current rate.
  *
  * @param zone - The zone to project.
@@ -65,10 +78,10 @@ function assessZone(zone: ZoneState, heatStress: boolean): Risk | null {
   const eta = etaToCriticalMin(zone);
 
   const detail = [
-    `${zone.name} is at ${round1(zone.densityPct)}% of safe capacity`,
-    `(${Math.round(zone.occupancy)} of ${zone.capacity} people)`,
-    eta === undefined ? '' : `, projected to reach critical in ~${eta} min at the current rate`,
-    heatStress ? ', escalated one band for heat stress' : '',
+    `${zone.name} is at ${round1(zone.densityPct)}% of safe capacity `,
+    `(${formatCount(zone.occupancy)} of ${formatCount(zone.capacity)} people)`,
+    eta === undefined ? '' : `, and is on track to reach critical in about ${eta} minutes`,
+    heatStress ? '. Heat and humidity raise this by one band' : '',
     '.',
   ].join('');
 
@@ -102,10 +115,11 @@ function assessGate(gate: GateState): Risk | null {
   const growing = surplus > 0;
 
   const detail = [
-    `${gate.name} is running at ${round1(gate.utilizationPct)}% of processing capacity`,
-    ` (${Math.round(gate.inflowPerMin)} arrivals/min against ${Math.round(gate.throughputPerMin)}/min throughput)`,
-    ` with ${Math.round(gate.queueLen)} people queueing`,
-    growing ? `, and the queue is growing by ${Math.round(surplus)} people/min` : '',
+    `${gate.name} is taking ${formatCount(gate.inflowPerMin)} arrivals a minute `,
+    `but can only process ${formatCount(gate.throughputPerMin)}, `,
+    `putting it at ${round1(gate.utilizationPct)}% of capacity `,
+    `with ${formatCount(gate.queueLen)} people waiting`,
+    growing ? `. The queue is growing by ${formatCount(surplus)} people a minute` : '',
     '.',
   ].join('');
 

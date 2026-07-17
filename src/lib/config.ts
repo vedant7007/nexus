@@ -31,6 +31,20 @@ const serverSchema = z.object({
   GEMINI_API_KEY: z.string().min(1).optional(),
   FIREBASE_PROJECT_ID: z.string().min(1).optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  /**
+   * Explicit, opt-in bypass of token verification, for the E2E build only.
+   *
+   * The Playwright suite runs a *production* build (so it exercises the real CSP
+   * and the real bundle), which means the non-production dev-auth path never
+   * fires. Rather than weaken that production guard, the test harness sets this
+   * flag to '1'. It is named for exactly what it is, defaults off, and is never
+   * set by any real deployment — a test asserts that without it, production
+   * refuses every request.
+   */
+  AUTH_BYPASS: z
+    .enum(['0', '1'])
+    .optional()
+    .transform((value) => value === '1'),
 });
 
 const clientSchema = z.object({
@@ -66,6 +80,7 @@ export function serverConfig(): ServerConfig {
       FIREBASE_PROJECT_ID:
         process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       NODE_ENV: process.env.NODE_ENV,
+      AUTH_BYPASS: process.env.AUTH_BYPASS,
     });
   }
   return cachedServer;

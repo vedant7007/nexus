@@ -60,7 +60,13 @@ function snapshot(over: Partial<Snapshot> = {}): Snapshot {
 }
 
 describe('computeRerouteImpact', () => {
-  const from = gate({ id: 'gC', name: 'Gate C', inflowPerMin: 150, throughputPerMin: 90, queueLen: 600 });
+  const from = gate({
+    id: 'gC',
+    name: 'Gate C',
+    inflowPerMin: 150,
+    throughputPerMin: 90,
+    queueLen: 600,
+  });
   const to = gate({ id: 'gD', name: 'Gate D', inflowPerMin: 46, throughputPerMin: 100 });
 
   it('moves the requested share of arrivals off the source gate', () => {
@@ -79,7 +85,8 @@ describe('computeRerouteImpact', () => {
 
   it('conserves people — nothing is created or lost by a reroute', () => {
     const impact = computeRerouteImpact(from, to, 0.2);
-    const movedFromSource = ((impact.fromBeforePct - impact.fromAfterPct) / 100) * from.throughputPerMin;
+    const movedFromSource =
+      ((impact.fromBeforePct - impact.fromAfterPct) / 100) * from.throughputPerMin;
     const addedToTarget = ((impact.toAfterPct - impact.toBeforePct) / 100) * to.throughputPerMin;
     // Reported percentages are rounded to 1dp, so allow sub-person tolerance.
     expect(movedFromSource).toBeCloseTo(addedToTarget, 0);

@@ -93,9 +93,7 @@ export interface RecommendationsResult {
  * @returns Recommendations, most urgent first, and the overall mode. Reports
  *   'rule' if any reasoning fell back, so the UI badge never overclaims.
  */
-export async function recommendationsFor(
-  report: SituationReport,
-): Promise<RecommendationsResult> {
+export async function recommendationsFor(report: SituationReport): Promise<RecommendationsResult> {
   const targets = report.risks.slice(0, MAX_AI_RECOMMENDATIONS);
 
   const built = await Promise.all(
@@ -117,7 +115,9 @@ export async function recommendationsFor(
     }),
   );
 
-  const present = built.filter((entry): entry is { item: Recommendation; mode: AiMode } => entry !== null);
+  const present = built.filter(
+    (entry): entry is { item: Recommendation; mode: AiMode } => entry !== null,
+  );
 
   return {
     items: present.map((entry) => entry.item),

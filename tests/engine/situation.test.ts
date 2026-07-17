@@ -223,8 +223,9 @@ describe('buildSituationReport', () => {
     );
 
     expect(report.risks[0]?.detail).toContain('96%');
-    expect(report.risks[0]?.detail).toContain('9600');
-    expect(report.risks[0]?.detail).toContain('10000');
+    // Thousands separators: an operator reads '9,600' at a glance.
+    expect(report.risks[0]?.detail).toContain('9,600');
+    expect(report.risks[0]?.detail).toContain('10,000');
   });
 
   it('escalates every crowd risk one band under heat stress', () => {
@@ -237,7 +238,7 @@ describe('buildSituationReport', () => {
 
     expect(calm.risks[0]?.level).toBe('elevated');
     expect(hot.risks[0]?.level).toBe('high');
-    expect(hot.risks[0]?.detail).toContain('heat stress');
+    expect(hot.risks[0]?.detail).toContain('Heat and humidity raise this by one band');
   });
 
   it('flags an overloaded gate and says the queue is growing', () => {
@@ -349,7 +350,13 @@ describe('buildSituationReport', () => {
       snapshot({
         zones: [
           zone({ id: 'slow', name: 'Slow', occupancy: 8_600, capacity: 10_000, netFlowPerMin: 5 }),
-          zone({ id: 'fast', name: 'Fast', occupancy: 8_600, capacity: 10_000, netFlowPerMin: 200 }),
+          zone({
+            id: 'fast',
+            name: 'Fast',
+            occupancy: 8_600,
+            capacity: 10_000,
+            netFlowPerMin: 200,
+          }),
         ],
       }),
       AT,

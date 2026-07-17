@@ -223,7 +223,10 @@ export async function generateReasoning(
   const result = await generateJson(reasoningPrompt(risk, chosen, alternatives), reasoningSchema);
 
   if (!result.ok) {
-    return { reasoning: templatedReasoning(risk, chosen.action, chosen.impact), mode: 'rule' };
+    return {
+      reasoning: templatedReasoning(risk, chosen.action, alternatives.length),
+      mode: 'rule',
+    };
   }
   return { reasoning: result.value.reasoning, mode: 'ai' };
 }

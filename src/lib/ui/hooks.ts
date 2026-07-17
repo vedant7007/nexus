@@ -1,0 +1,212 @@
+'use client';
+
+/**
+ * @module ui/hooks
+ *
+ * Responsibility: every data-fetching concern the command center has.
+ *
+ * Components import from here and render what they are handed. None of them
+ * calls `fetch`, none of them knows a URL, and none of them owns a polling
+ * interval — which is what keeps them small, dumb, and testable with plain
+ * props rather than a mocked network.
+ */
+import { useCallback } from 'react';
+
+import type { IncidentStatus } from '../engine/types';
+import {
+  type BriefingDto,
+  type IncidentDto,
+  type RecommendationsDto,
+  type SituationReportDto,
+  type SnapshotDto,
+  type TriagePreviewDto,
+  briefingResponseSchema,
+  incidentListSchema,
+  incidentSchema,
+  recommendationsResponseSchema,
+  situationReportSchema,
+  snapshotSchema,
+  triagePreviewSchema,
+} from '../schemas/api';
+import type { ScenarioId } from '../sim/scenarios';
+
+import { type ApiResult, apiFetch } from './apiClient';
+import { BRIEFING_REFRESH_MS, INCIDENTS_POLL_MS, RECOMMENDATIONS_REFRESH_MS } from './constants';
+import { useAuthToken } from './useAuthToken';
+import { useLatest } from './useLatest';
+import { type PolledResource, usePolledResource } from './usePolledResource';
+
+/** Query string for a scenario and tick. */
+function query(scenario: ScenarioId, tick: number): string {
+  return `?scenario=${encodeURIComponent(scenario)}&tick=${tick}`;
+}
+
+/**
+ * Polls the live venue snapshot.
+ *
+ * @param scenario - Active scenario.
+ * @param tick - Simulation tick to render.
+ * @returns The snapshot resource.
+ */
+export function useSnapshot(scenario: ScenarioId, tick: number): PolledResource<SnapshotDto> {
+  const getToken = useAuthToken();
+  const fetcher = useCallback(
+    (signal: AbortSignal) =>
+      apiFetch(`/api/sim${query(scenario, tick)}`, snapshotSchema, getToken, { signal }),
+    [scenario, tick, getToken],
+  );
+  // Interval 0: the tick is driven by the dashboard clock, so this refetches
+  // when the tick changes rather than on a second, competing timer.
+  return usePolledResource(fetcher, 0);
+}
+
+/**
+ * Polls the deterministic situation report.
+ *
+ * @param scenario - Active scenario.
+ * @param tick - Simulation tick to render.
+ * @returns The report resource.
+ */
+export function useSituation(
+  scenario: ScenarioId,
+  tick: number,
+): PolledResource<SituationReportDto> {
+  const getToken = useAuthToken();
+  const fetcher = useCallback(
+    (signal: AbortSignal) =>
+      apiFetch(`/api/situation${query(scenario, tick)}`, situationReportSchema, getToken, {
+        signal,
+      }),
+    [scenario, tick, getToken],
+  );
+  return usePolledResource(fetcher, 0);
+}
+
+/** A briefing, keyed to a scenario and refreshed on its own slow cadence. */
+export interface BriefingOptions {
+  scenario: ScenarioId;
+  tick: number;
+  kind: 'situation' | 'sustainability';
+}
+
+/**
+ * Fetches an AI briefing, refreshing on the briefing cadence.
+ *
+ * Refreshes far slower than the snapshot because each call costs AI budget.
+ * The tick is read at request time rather than being a dependency, so the
+ * briefing does not re-fire every time the clock advances.
+ *
+ * @param options - Scenario, tick, and which briefing to fetch.
+ * @returns The briefing resource.
+ */
+export function useBriefing(options: BriefingOptions): PolledResource<BriefingDto> {
+  const getToken = useAuthToken();
+  const { scenario, kind } = options;
+
+  // The tick moves every few seconds; capturing it as a dependency would
+  // restart the poll each time and defeat the whole point of a slow cadence.
+  const tickRef = useLatest(options.tick);
+
+  const fetcher = useCallback(
+    (signal: AbortSignal) =>
+      apiFetch(`/api/ai/briefing`, briefingResponseSchema, getToken, {
+        method: 'POST',
+        body: { scenario, tick: tickRef.current, kind },
+        signal,
+      }),
+    [scenario, kind, getToken, tickRef],
+  );
+
+  return usePolledResource(fetcher, BRIEFING_REFRESH_MS);
+}
+
+/**
+ * Fetches ranked recommendations, refreshing on its own cadence.
+ *
+ * @param scenario - Active scenario.
+ * @param tick - Simulation tick.
+ * @returns The recommendations resource.
+ */
+export function useRecommendations(
+  scenario: ScenarioId,
+  tick: number,
+): PolledResource<RecommendationsDto> {
+  const getToken = useAuthToken();
+
+  const tickRef = useLatest(tick);
+
+  const fetcher = useCallback(
+    (signal: AbortSignal) =>
+      apiFetch(
+        `/api/recommendations${query(scenario, tickRef.current)}`,
+        recommendationsResponseSchema,
+        getToken,
+        { signal },
+      ),
+    [scenario, getToken, tickRef],
+  );
+
+  return usePolledResource(fetcher, RECOMMENDATIONS_REFRESH_MS);
+}
+
+/** The incident log plus the operations that mutate it. */
+export interface IncidentsApi extends PolledResource<{ incidents: IncidentDto[] }> {
+  report: (rawText: string, zoneId: string) => Promise<ApiResult<IncidentDto>>;
+  preview: (rawText: string, zoneId: string) => Promise<ApiResult<TriagePreviewDto>>;
+  setStatus: (id: string, status: IncidentStatus) => Promise<ApiResult<IncidentDto>>;
+}
+
+/**
+ * Polls the incident log and exposes the operations that change it.
+ *
+ * @param scenario - Active scenario, used as triage context.
+ * @param tick - Simulation tick, used as triage context.
+ * @returns The log resource plus report, preview, and status operations.
+ */
+export function useIncidents(scenario: ScenarioId, tick: number): IncidentsApi {
+  const getToken = useAuthToken();
+
+  const fetcher = useCallback(
+    (signal: AbortSignal) => apiFetch('/api/incidents', incidentListSchema, getToken, { signal }),
+    [getToken],
+  );
+  const resource = usePolledResource(fetcher, INCIDENTS_POLL_MS);
+  const { refresh } = resource;
+
+  const tickRef = useLatest(tick);
+
+  const report = useCallback(
+    async (rawText: string, zoneId: string) => {
+      const result = await apiFetch('/api/incidents', incidentSchema, getToken, {
+        method: 'POST',
+        body: { rawText, zoneId, scenario, tick: tickRef.current },
+      });
+      if (result.ok) refresh();
+      return result;
+    },
+    [getToken, scenario, refresh, tickRef],
+  );
+
+  const preview = useCallback(
+    (rawText: string, zoneId: string) =>
+      apiFetch('/api/ai/triage', triagePreviewSchema, getToken, {
+        method: 'POST',
+        body: { rawText, zoneId, scenario, tick: tickRef.current },
+      }),
+    [getToken, scenario, tickRef],
+  );
+
+  const setStatus = useCallback(
+    async (id: string, status: IncidentStatus) => {
+      const result = await apiFetch(`/api/incidents/${id}`, incidentSchema, getToken, {
+        method: 'PATCH',
+        body: { status },
+      });
+      if (result.ok) refresh();
+      return result;
+    },
+    [getToken, refresh],
+  );
+
+  return { ...resource, report, preview, setStatus };
+}

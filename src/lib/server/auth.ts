@@ -47,11 +47,20 @@ export async function requireUser(request: Request): Promise<AuthedUser> {
   const token = parseBearer(request.headers.get('authorization'));
   if (token === null) throw unauthenticated('Missing bearer token.');
 
-  if (!isFirebaseConfigured() && serverConfig().NODE_ENV !== 'production') {
-    // Local development without a Firebase project. Never reachable in
-    // production: the guard above requires NODE_ENV to not be 'production',
-    // and a deployed revision always sets it. A test pins this.
-    logger.warn('auth bypassed: Firebase is not configured (non-production only)');
+  const config = serverConfig();
+
+  // Two ways the token check is skipped, both safe:
+  //  1. The E2E harness sets AUTH_BYPASS=1 explicitly. Opt-in and named; no real
+  //     deploy sets it.
+  //  2. Local development with no Firebase project at all — but never in
+  //     production, so a deployed revision that forgot its Firebase config fails
+  //     closed rather than open.
+  // A test pins that neither path fires for a production request lacking the flag.
+  const devBypass = !isFirebaseConfigured() && config.NODE_ENV !== 'production';
+  if (config.AUTH_BYPASS || devBypass) {
+    logger.warn('auth bypassed', {
+      reason: config.AUTH_BYPASS ? 'AUTH_BYPASS flag' : 'no Firebase (dev)',
+    });
     return { uid: `dev-${token.slice(0, 8)}`, email: undefined };
   }
 

@@ -81,6 +81,19 @@ const config = [
     },
   },
   {
+    // Playwright specs are excluded from tsconfig (they run under Playwright's
+    // own compiler, not Next's), so the type-aware rules have no program to
+    // consult here. Lint them syntactically rather than not at all.
+    files: ['e2e/**/*.ts'],
+    languageOptions: { parserOptions: { project: null } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/switch-exhaustiveness-check': 'off',
+    },
+  },
+  {
     // The structured logger is the one place permitted to touch the console.
     files: ['src/lib/server/logger.ts'],
     rules: { 'no-console': 'off' },

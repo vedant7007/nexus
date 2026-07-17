@@ -83,12 +83,48 @@ export const ZONES: readonly ZoneConfig[] = [
  *    matchday and pins every density readout to critical.
  */
 export const GATES: readonly GateConfig[] = [
-  { id: 'gA', name: 'Gate A', baseThroughputPerMin: 354, arrivalShare: 12_000 / 61_000, feedsZoneId: 'z1' },
-  { id: 'gB', name: 'Gate B', baseThroughputPerMin: 280, arrivalShare: 9_500 / 61_000, feedsZoneId: 'z2' },
-  { id: 'gC', name: 'Gate C', baseThroughputPerMin: 236, arrivalShare: 8_000 / 61_000, feedsZoneId: 'z3' },
-  { id: 'gD', name: 'Gate D', baseThroughputPerMin: 339, arrivalShare: 11_500 / 61_000, feedsZoneId: 'z4' },
-  { id: 'gE', name: 'Gate E', baseThroughputPerMin: 354, arrivalShare: 12_000 / 61_000, feedsZoneId: 'z5' },
-  { id: 'gF', name: 'Gate F', baseThroughputPerMin: 236, arrivalShare: 8_000 / 61_000, feedsZoneId: 'z7' },
+  {
+    id: 'gA',
+    name: 'Gate A',
+    baseThroughputPerMin: 354,
+    arrivalShare: 12_000 / 61_000,
+    feedsZoneId: 'z1',
+  },
+  {
+    id: 'gB',
+    name: 'Gate B',
+    baseThroughputPerMin: 280,
+    arrivalShare: 9_500 / 61_000,
+    feedsZoneId: 'z2',
+  },
+  {
+    id: 'gC',
+    name: 'Gate C',
+    baseThroughputPerMin: 236,
+    arrivalShare: 8_000 / 61_000,
+    feedsZoneId: 'z3',
+  },
+  {
+    id: 'gD',
+    name: 'Gate D',
+    baseThroughputPerMin: 339,
+    arrivalShare: 11_500 / 61_000,
+    feedsZoneId: 'z4',
+  },
+  {
+    id: 'gE',
+    name: 'Gate E',
+    baseThroughputPerMin: 354,
+    arrivalShare: 12_000 / 61_000,
+    feedsZoneId: 'z5',
+  },
+  {
+    id: 'gF',
+    name: 'Gate F',
+    baseThroughputPerMin: 236,
+    arrivalShare: 8_000 / 61_000,
+    feedsZoneId: 'z7',
+  },
 ];
 
 /** The transit lines serving the venue. Arrival shares sum to 1. */

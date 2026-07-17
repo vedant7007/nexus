@@ -152,7 +152,8 @@ export function resolveGateShares(scenario: Scenario): GateShare[] {
   return weighted.map(({ gate, weight }) => ({
     gate,
     share: total <= 0 ? 0 : weight / total,
-    throughputPerMin: gate.baseThroughputPerMin * (scenario.gateThroughputMultipliers[gate.id] ?? 1),
+    throughputPerMin:
+      gate.baseThroughputPerMin * (scenario.gateThroughputMultipliers[gate.id] ?? 1),
   }));
 }
 
