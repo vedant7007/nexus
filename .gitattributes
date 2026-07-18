@@ -1,0 +1,23 @@
+# Normalise line endings to LF for all text files.
+#
+# The project's Prettier config pins endOfLine: lf, Cloud Build runs on Linux,
+# and a shell script checked out with CRLF fails with "bad interpreter". Forcing
+# LF keeps the repo consistent across Windows/macOS/Linux and silences the
+# endless "LF will be replaced by CRLF" warnings.
+* text=auto eol=lf
+
+# Explicitly LF — these break or misbehave with CRLF.
+*.sh text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+
+# Binary — never touch.
+*.png binary
+*.ico binary
+*.woff2 binary
