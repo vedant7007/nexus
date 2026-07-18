@@ -264,7 +264,7 @@ describe('SustainabilityStrip', () => {
   const insight = { text: 'Energy is 8% above baseline.', mode: 'rule' as const, generatedAt: '' };
 
   it('renders metrics against their targets', () => {
-    render(<SustainabilityStrip snapshot={SNAPSHOT} insight={insight} loading={false} />);
+    render(<SustainabilityStrip snapshot={SNAPSHOT} insight={insight} />);
 
     expect(screen.getByText('2,592 kWh')).toBeInTheDocument();
     expect(screen.getByText('71%')).toBeInTheDocument();
@@ -272,16 +272,14 @@ describe('SustainabilityStrip', () => {
   });
 
   it('renders the insight with its mode', () => {
-    render(<SustainabilityStrip snapshot={SNAPSHOT} insight={insight} loading={false} />);
+    render(<SustainabilityStrip snapshot={SNAPSHOT} insight={insight} />);
 
     expect(screen.getByText('Energy is 8% above baseline.')).toBeInTheDocument();
     expect(screen.getByText('Rule-based')).toBeInTheDocument();
   });
 
   it('has no axe violations', async () => {
-    const { container } = render(
-      <SustainabilityStrip snapshot={SNAPSHOT} insight={insight} loading={false} />,
-    );
+    const { container } = render(<SustainabilityStrip snapshot={SNAPSHOT} insight={insight} />);
     await expectNoAxeViolations(container);
   });
 });

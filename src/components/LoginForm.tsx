@@ -40,6 +40,15 @@ export function toLoginMessage(error: unknown): string {
   return ERROR_COPY[code] ?? 'Could not sign in. Please try again.';
 }
 
+/** Shown briefly while the page redirects, in place of the full form. */
+function RedirectingNotice() {
+  return (
+    <div className="flex min-h-[20rem] items-center justify-center" role="status">
+      <p className="text-sm text-[var(--color-ink-dim)]">Taking you to the command center…</p>
+    </div>
+  );
+}
+
 /**
  * The sign-in form.
  *
@@ -54,11 +63,18 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Redirect away when there is nothing to sign into: an already-signed-in
+  // user, or a build with no Firebase project (local dev / demo has an implicit
+  // identity). Computed during render, not just in the effect, so we never
+  // paint the full form only to navigate away a frame later — that flash was a
+  // large cumulative layout shift.
+  const redirecting = user !== null || !configured;
+
   useEffect(() => {
-    // Nothing to sign into when Firebase is unconfigured: local dev has an
-    // implicit identity, so parking the operator on a dead form would be a bug.
-    if (user !== null || !configured) router.replace('/dashboard');
-  }, [user, configured, router]);
+    if (redirecting) router.replace('/dashboard');
+  }, [redirecting, router]);
+
+  if (redirecting) return <RedirectingNotice />;
 
   const run = async (action: () => Promise<void>): Promise<void> => {
     setBusy(true);

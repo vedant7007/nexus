@@ -54,7 +54,11 @@ export function TopBar({ overall, tMinusKickoffMin, scenario, onScenarioChange }
           </span>
         </div>
 
-        <div aria-live="polite" className="flex items-center">
+        {/* Fixed footprint — height AND width. Swapping the placeholder for the
+            status pill (taller, and wider at "Critical") would otherwise reflow
+            this wrapping flex header and push the whole dashboard down. Pinning
+            the slot's size makes that the page's zero-shift moment. */}
+        <div aria-live="polite" className="flex h-10 w-[12rem] items-center">
           {overall === null ? (
             <span className="text-xs text-[var(--color-ink-dim)]">Assessing…</span>
           ) : (

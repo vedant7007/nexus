@@ -98,6 +98,45 @@
   .skip-link:focus {
     left: 0;
   }
+
+  /*
+   * The control room reacting: a subtle, slow pulse on a critical status pill.
+   * Deliberately restrained — a fast or bright flash in a room staffed for
+   * hours is fatigue, not information. One breath every 2.4s draws the eye
+   * without demanding it, and it rides on box-shadow so it never shifts layout.
+   */
+  .pulse-critical {
+    animation: nexus-pulse-critical 2.4s ease-in-out infinite;
+  }
+
+  @keyframes nexus-pulse-critical {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 77, 94, 0);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(255, 77, 94, 0.22);
+    }
+  }
+
+  /*
+   * A one-shot lift when a panel escalates, so a change of state reads as an
+   * event rather than a silent value swap. Fires once and settles.
+   */
+  .flash-escalate {
+    animation: nexus-flash-escalate 0.9s ease-out 1;
+  }
+
+  @keyframes nexus-flash-escalate {
+    0% {
+      border-color: var(--color-status-critical);
+      box-shadow: 0 0 0 1px var(--color-status-critical);
+    }
+    100% {
+      border-color: var(--color-border);
+      box-shadow: none;
+    }
+  }
 }
 
 /* Honour the OS reduced-motion setting: no transitions, no pulses, no count-ups. */

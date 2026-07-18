@@ -6,14 +6,13 @@
  * Responsibility: render resource metrics and the AI insight about them.
  */
 import { ModeBadge } from '@/components/ui/ModeBadge';
-import { Panel, PanelSkeleton } from '@/components/ui/Panel';
+import { Panel } from '@/components/ui/Panel';
 import type { BriefingDto, SnapshotDto } from '@/lib/schemas/api';
 
 /** Props for {@link SustainabilityStrip}. */
 export interface SustainabilityStripProps {
   snapshot: SnapshotDto | null;
   insight: BriefingDto | null;
-  loading: boolean;
 }
 
 /** A single metric and its target. */
@@ -25,44 +24,49 @@ interface Metric {
   detail: string;
 }
 
+/** Placeholder for a value that has not arrived yet. */
+const PENDING = '—';
+
+/** Static definition of each metric, so labels render before any data. */
+const METRIC_DEFS: readonly { label: string; detail: string }[] = [
+  { label: 'Energy', detail: 'Current interval draw' },
+  { label: 'Waste diverted', detail: 'Target 75%' },
+  { label: 'Water', detail: 'Current interval use' },
+  { label: 'Public transport', detail: 'Target 60% modal share' },
+];
+
 /**
- * Derives the displayed metrics from a snapshot.
+ * Derives the displayed metrics from a snapshot, or placeholders when it has not
+ * arrived. Always returns the same four rows in the same order, so the panel's
+ * height is fixed whether or not data is present — no layout shift.
  *
  * Presentation only: the engine's `sustainabilitySummary` owns the analysis and
  * the AI insight already reports it. This just formats four numbers.
  *
- * @param snapshot - The venue snapshot.
- * @returns The metrics to render.
+ * @param snapshot - The venue snapshot, or null before it arrives.
+ * @returns The four metrics to render.
  */
-function toMetrics(snapshot: SnapshotDto): Metric[] {
-  const { resources } = snapshot;
+function toMetrics(snapshot: SnapshotDto | null): Metric[] {
+  const r = snapshot?.resources;
+  const values: { value: string; onTarget: boolean | null }[] =
+    r === undefined
+      ? METRIC_DEFS.map(() => ({ value: PENDING, onTarget: null }))
+      : [
+          { value: `${Math.round(r.energyKwh).toLocaleString('en-US')} kWh`, onTarget: null },
+          { value: `${Math.round(r.wasteDiversionPct)}%`, onTarget: r.wasteDiversionPct >= 75 },
+          { value: `${Math.round(r.waterLitres).toLocaleString('en-US')} L`, onTarget: null },
+          {
+            value: `${Math.round(r.publicTransportSharePct)}%`,
+            onTarget: r.publicTransportSharePct >= 60,
+          },
+        ];
 
-  return [
-    {
-      label: 'Energy',
-      value: `${Math.round(resources.energyKwh).toLocaleString('en-US')} kWh`,
-      onTarget: null,
-      detail: 'Current interval draw',
-    },
-    {
-      label: 'Waste diverted',
-      value: `${Math.round(resources.wasteDiversionPct)}%`,
-      onTarget: resources.wasteDiversionPct >= 75,
-      detail: 'Target 75%',
-    },
-    {
-      label: 'Water',
-      value: `${Math.round(resources.waterLitres).toLocaleString('en-US')} L`,
-      onTarget: null,
-      detail: 'Current interval use',
-    },
-    {
-      label: 'Public transport',
-      value: `${Math.round(resources.publicTransportSharePct)}%`,
-      onTarget: resources.publicTransportSharePct >= 60,
-      detail: 'Target 60% modal share',
-    },
-  ];
+  return METRIC_DEFS.map((def, i) => ({
+    label: def.label,
+    detail: def.detail,
+    value: values[i]?.value ?? PENDING,
+    onTarget: values[i]?.onTarget ?? null,
+  }));
 }
 
 /**
@@ -76,13 +80,7 @@ function toMetrics(snapshot: SnapshotDto): Metric[] {
  * @param props - Snapshot, insight, and loading state.
  * @returns The strip.
  */
-export function SustainabilityStrip({ snapshot, insight, loading }: SustainabilityStripProps) {
-  if (snapshot === null) {
-    return (
-      <Panel title="Sustainability & Ops">{loading ? <PanelSkeleton lines={2} /> : null}</Panel>
-    );
-  }
-
+export function SustainabilityStrip({ snapshot, insight }: SustainabilityStripProps) {
   return (
     <Panel
       title="Sustainability & Ops"
@@ -113,14 +111,14 @@ export function SustainabilityStrip({ snapshot, insight, loading }: Sustainabili
         ))}
       </dl>
 
-      {insight === null ? null : (
-        <p
-          className="mt-4 border-t border-[var(--color-border)] pt-3.5 text-sm leading-relaxed text-[var(--color-ink-muted)]"
-          aria-live="polite"
-        >
-          {insight.text}
-        </p>
-      )}
+      {/* The insight line is always present (min-height reserved) so its
+          arrival swaps text rather than pushing the panel taller. */}
+      <p
+        className="mt-4 min-h-[2.5rem] border-t border-[var(--color-border)] pt-3.5 text-sm leading-relaxed text-[var(--color-ink-muted)]"
+        aria-live="polite"
+      >
+        {insight === null ? 'Computing resource insight…' : insight.text}
+      </p>
     </Panel>
   );
 }

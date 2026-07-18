@@ -33,10 +33,13 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npm run start -- --port ${PORT}`,
     url: BASE_URL,
-    // Never reuse: the only server this suite should ever talk to is the one it
-    // just built. See the note on PORT.
-    reuseExistingServer: false,
-    timeout: 240_000,
+    // Never reuse by default: the only server this suite should talk to is the
+    // one it just built (see the note on PORT). The env override exists purely
+    // for local debugging against an already-running build.
+    reuseExistingServer: process.env.PW_REUSE_SERVER === '1',
+    // Generous: a cold Next build plus server start can approach four minutes on
+    // a loaded machine, and a webServer timeout reads as a spurious test failure.
+    timeout: 360_000,
     // The suite runs a production build with no Firebase project, so it opts
     // into the explicit, test-only auth bypass. Real deployments never set this.
     env: { AUTH_BYPASS: '1' },

@@ -15,9 +15,11 @@ import { useCallback, useState } from 'react';
 import { NavBar } from '@/components/NavBar';
 import type { ScenarioId } from '@/lib/sim/scenarios';
 import { useBriefing, useRecommendations, useSituation, useSnapshot } from '@/lib/ui/hooks';
+import { useEscalation } from '@/lib/ui/useEscalation';
 import { useSimClock } from '@/lib/ui/useSimClock';
 
 import { BriefingPanel } from './BriefingPanel';
+import { EscalationFlash } from './EscalationFlash';
 import { RecommendationsPanel } from './RecommendationsPanel';
 import { StadiumMap } from './StadiumMap';
 import { SustainabilityStrip } from './SustainabilityStrip';
@@ -45,6 +47,17 @@ export function DashboardView() {
   const sustainability = useBriefing({ scenario, tick, kind: 'sustainability' });
   const recommendations = useRecommendations(scenario, tick, level);
 
+  const overall = level ?? null;
+  // A one-shot flash on the briefing when the board escalates, so the change
+  // reads as a coordinated moment alongside the pulsing status pill.
+  const escalationToken = useEscalation(overall);
+
+  // Hoisted once so the JSX below stays branch-light (and each fallback is
+  // evaluated a single time per render, not per use).
+  const zones = snapshot.data?.zones ?? [];
+  const gates = snapshot.data?.gates ?? [];
+  const tMinusKickoffMin = snapshot.data?.tMinusKickoffMin ?? null;
+
   const handleScenarioChange = useCallback((next: ScenarioId) => {
     setScenario(next);
     // Acknowledgements belong to the situation that produced them; carrying
@@ -63,8 +76,8 @@ export function DashboardView() {
       </a>
 
       <TopBar
-        overall={situation.data?.overall ?? null}
-        tMinusKickoffMin={snapshot.data?.tMinusKickoffMin ?? null}
+        overall={overall}
+        tMinusKickoffMin={tMinusKickoffMin}
         scenario={scenario}
         onScenarioChange={handleScenarioChange}
       />
@@ -75,21 +88,19 @@ export function DashboardView() {
 
         <div className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
           <div className="space-y-4">
-            <StadiumMap zones={snapshot.data?.zones ?? []} />
-            <ZoneGrid
-              zones={snapshot.data?.zones ?? []}
-              gates={snapshot.data?.gates ?? []}
-              loading={snapshot.loading}
-            />
+            <StadiumMap zones={zones} />
+            <ZoneGrid zones={zones} gates={gates} loading={snapshot.loading} />
           </div>
 
           <div className="space-y-4">
-            <BriefingPanel
-              briefing={briefing.data}
-              loading={briefing.loading}
-              error={briefing.error}
-              onRetry={briefing.refresh}
-            />
+            <EscalationFlash token={escalationToken}>
+              <BriefingPanel
+                briefing={briefing.data}
+                loading={briefing.loading}
+                error={briefing.error}
+                onRetry={briefing.refresh}
+              />
+            </EscalationFlash>
             <RecommendationsPanel
               recommendations={recommendations.data}
               loading={recommendations.loading}
@@ -102,11 +113,7 @@ export function DashboardView() {
         </div>
 
         <div className="mt-4">
-          <SustainabilityStrip
-            snapshot={snapshot.data}
-            insight={sustainability.data}
-            loading={sustainability.loading}
-          />
+          <SustainabilityStrip snapshot={snapshot.data} insight={sustainability.data} />
         </div>
       </main>
     </>

@@ -15,7 +15,7 @@
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 
-import { AI_RATE_LIMIT_PER_MIN } from '../config';
+import { AI_RATE_LIMIT_PER_MIN, serverConfig } from '../config';
 
 import { type AuthedUser, requireUser } from './auth';
 import { type ErrorBody, AppError, invalidRequest, isAppError, rateLimited } from './errors';
@@ -98,7 +98,12 @@ export function withRoute<TBody = undefined, TResult = unknown>(
     try {
       const user = await requireUser(request);
 
-      if (options.rateLimit === true) {
+      // The rate limit is per-uid. In the explicit AUTH_BYPASS build (demo /
+      // E2E) every request shares one synthetic identity, so a per-user limit
+      // would throttle the entire session as if it were a single abusive user —
+      // the panels would show a 429 mid-demo. It is skipped there and covered by
+      // the route integration tests, which run without the flag.
+      if (options.rateLimit === true && !serverConfig().AUTH_BYPASS) {
         const limit = checkRateLimit(user.uid, AI_RATE_LIMIT_PER_MIN);
         if (!limit.allowed) {
           logger.info('rate limit hit', { route, uid: user.uid });

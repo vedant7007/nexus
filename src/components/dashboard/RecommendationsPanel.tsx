@@ -5,6 +5,8 @@
  *
  * Responsibility: render ranked decision recommendations. Presentational only.
  */
+import { memo } from 'react';
+
 import { ModeBadge } from '@/components/ui/ModeBadge';
 import { Panel, PanelEmpty, PanelError, PanelSkeleton } from '@/components/ui/Panel';
 import { StatusPill } from '@/components/ui/StatusPill';
@@ -86,7 +88,7 @@ function RecommendationCard({
  * @param props - The recommendations, their states, and callbacks.
  * @returns The panel.
  */
-export function RecommendationsPanel({
+function RecommendationsPanelImpl({
   recommendations,
   loading,
   error,
@@ -101,7 +103,10 @@ export function RecommendationsPanel({
       title="AI Recommendations"
       actions={recommendations === null ? null : <ModeBadge mode={recommendations.mode} />}
     >
-      <div aria-live="polite" aria-busy={loading}>
+      {/* Reserve vertical space so the transition from skeleton to cards does
+          not push the sustainability strip below it around — a cumulative
+          layout shift the dashboard was losing performance points to. */}
+      <div aria-live="polite" aria-busy={loading} className="min-h-[13rem]">
         {loading && recommendations === null ? <PanelSkeleton lines={5} /> : null}
 
         {recommendations === null && error !== null ? (
@@ -128,3 +133,11 @@ export function RecommendationsPanel({
     </Panel>
   );
 }
+
+/**
+ * The AI decision recommendations panel.
+ *
+ * Memoised for the same reason as the briefing: recommendations refresh on a
+ * slow cadence, so they need not re-render on every dashboard clock tick.
+ */
+export const RecommendationsPanel = memo(RecommendationsPanelImpl);

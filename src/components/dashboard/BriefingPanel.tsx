@@ -5,6 +5,8 @@
  *
  * Responsibility: render the situational briefing. Presentational only.
  */
+import { memo } from 'react';
+
 import { ModeBadge } from '@/components/ui/ModeBadge';
 import { Panel, PanelError, PanelSkeleton } from '@/components/ui/Panel';
 import type { BriefingDto } from '@/lib/schemas/api';
@@ -38,10 +40,14 @@ function toClockTime(iso: string): string {
  * on a timer, and an assertive region would interrupt a screen reader user
  * mid-sentence every refresh. Polite queues the update until they are idle.
  *
+ * Memoised: the dashboard clock re-renders its parent every few seconds, but a
+ * briefing only changes on its own slow cadence, so skipping the intervening
+ * renders is a real reduction in main-thread work on a constrained device.
+ *
  * @param props - The briefing, its states, and a retry callback.
  * @returns The panel.
  */
-export function BriefingPanel({ briefing, loading, error, onRetry }: BriefingPanelProps) {
+function BriefingPanelImpl({ briefing, loading, error, onRetry }: BriefingPanelProps) {
   const showError = briefing === null && error !== null;
 
   return (
@@ -58,7 +64,9 @@ export function BriefingPanel({ briefing, loading, error, onRetry }: BriefingPan
         )
       }
     >
-      <div aria-live="polite" aria-busy={loading} className="min-h-[7rem]">
+      {/* Tall enough to hold the longest (critical) briefing, so the panel does
+          not grow as the situation escalates mid-session — a layout shift. */}
+      <div aria-live="polite" aria-busy={loading} className="min-h-[9.5rem]">
         {loading && briefing === null ? <PanelSkeleton lines={4} /> : null}
 
         {showError ? (
@@ -72,3 +80,6 @@ export function BriefingPanel({ briefing, loading, error, onRetry }: BriefingPan
     </Panel>
   );
 }
+
+/** The AI situational briefing panel. */
+export const BriefingPanel = memo(BriefingPanelImpl);

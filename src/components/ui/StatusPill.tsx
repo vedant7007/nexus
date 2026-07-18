@@ -32,10 +32,14 @@ const SIZE_CLASS: Record<'sm' | 'lg', string> = {
  */
 export function StatusPill({ level, size = 'sm', prefix }: StatusPillProps) {
   const status = statusOf(level);
+  // The hero pill breathes at critical — a restrained, non-colour cue that
+  // something needs attention now. Only at the large size, so the many small
+  // pills in cards and tables never flicker. Suppressed under reduced-motion.
+  const pulse = level === 'critical' && size === 'lg' ? 'pulse-critical' : '';
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border font-semibold tracking-wide ${status.badgeClass} ${SIZE_CLASS[size]}`}
+      className={`inline-flex items-center rounded-full border font-semibold tracking-wide ${status.badgeClass} ${SIZE_CLASS[size]} ${pulse}`}
     >
       <span aria-hidden="true">{status.icon}</span>
       <span>

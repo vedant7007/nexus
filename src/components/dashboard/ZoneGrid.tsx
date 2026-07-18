@@ -4,10 +4,18 @@
  * @module components/dashboard/ZoneGrid
  *
  * Responsibility: render live zone density and gate load. Presentational only.
+ *
+ * The venue's 8 zones and 6 gates are static, known at build time. So the grid
+ * always renders that full structure — every tile and row, by name — and fills
+ * in live values as they arrive. It never swaps a short skeleton for a taller
+ * populated grid, which means the panel's height is fixed from first paint and
+ * contributes no layout shift. A placeholder dash reads as "measuring", not as a
+ * broken value.
  */
-import { Panel, PanelSkeleton } from '@/components/ui/Panel';
+import { Panel } from '@/components/ui/Panel';
 import { formatCount } from '@/lib/engine/situation';
 import { classifyGateUtilization } from '@/lib/engine/thresholds';
+import { GATES, ZONES } from '@/lib/sim/venue';
 import { ZONE_TILE_FULL_PCT } from '@/lib/ui/constants';
 import type { GateStateDto, ZoneStateDto } from '@/lib/ui/dto';
 import { densityBand, statusOf } from '@/lib/ui/status';
@@ -19,25 +27,28 @@ export interface ZoneGridProps {
   loading: boolean;
 }
 
+/** Placeholder shown for a value that has not arrived yet. */
+const PENDING = '—';
+
 /**
- * One zone tile.
+ * One zone tile. Renders live values when present, placeholders otherwise, at a
+ * fixed height either way.
  *
- * @param props - The zone to render.
+ * @param props - The zone's static name and its optional live state.
  * @returns The tile.
  */
-function ZoneTile({ zone }: { zone: ZoneStateDto }) {
-  const level = densityBand(zone.densityPct);
-  const status = statusOf(level);
-  const barWidth = Math.min(ZONE_TILE_FULL_PCT, zone.densityPct);
+function ZoneTile({ name, zone }: { name: string; zone: ZoneStateDto | undefined }) {
+  const status = statusOf(densityBand(zone?.densityPct ?? 0));
+  const barWidth = zone === undefined ? 0 : Math.min(ZONE_TILE_FULL_PCT, zone.densityPct);
 
   return (
     <li className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-xs font-medium text-[var(--color-ink-muted)]">
-          {zone.name}
-        </span>
-        <span className={`tnum text-sm font-bold ${status.textClass}`}>
-          {Math.round(zone.densityPct)}%
+        <span className="truncate text-xs font-medium text-[var(--color-ink-muted)]">{name}</span>
+        <span
+          className={`tnum text-sm font-bold ${zone === undefined ? 'text-[var(--color-ink-dim)]' : status.textClass}`}
+        >
+          {zone === undefined ? PENDING : `${Math.round(zone.densityPct)}%`}
         </span>
       </div>
 
@@ -52,39 +63,49 @@ function ZoneTile({ zone }: { zone: ZoneStateDto }) {
       </div>
 
       <p className="mt-1.5 flex items-center gap-1 text-[0.6875rem] text-[var(--color-ink-dim)]">
-        {/* The label is what makes this readable without colour vision. */}
-        <span className={status.textClass} aria-hidden="true">
-          {status.icon}
-        </span>
-        <span className={status.textClass}>{status.label}</span>
-        <span aria-hidden="true">·</span>
-        <span className="tnum">{formatCount(zone.occupancy)}</span>
+        {zone === undefined ? (
+          <span>Measuring…</span>
+        ) : (
+          <>
+            {/* The label is what makes this readable without colour vision. */}
+            <span className={status.textClass} aria-hidden="true">
+              {status.icon}
+            </span>
+            <span className={status.textClass}>{status.label}</span>
+            <span aria-hidden="true">·</span>
+            <span className="tnum">{formatCount(zone.occupancy)}</span>
+          </>
+        )}
       </p>
     </li>
   );
 }
 
 /**
- * One gate row.
+ * One gate row, live or pending, at a fixed height.
  *
- * @param props - The gate to render.
+ * @param props - The gate's static name and its optional live state.
  * @returns The row.
  */
-function GateRow({ gate }: { gate: GateStateDto }) {
-  const status = statusOf(classifyGateUtilization(gate.utilizationPct));
+function GateRow({ name, gate }: { name: string; gate: GateStateDto | undefined }) {
+  const status = statusOf(classifyGateUtilization(gate?.utilizationPct ?? 0));
 
   return (
     <li className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] px-3 py-2.5">
-      <span className="text-xs font-medium text-[var(--color-ink-muted)]">{gate.name}</span>
-      <span className="flex items-center gap-3 text-[0.6875rem]">
-        <span className="text-[var(--color-ink-dim)]">
-          queue <span className="tnum text-[var(--color-ink)]">{formatCount(gate.queueLen)}</span>
+      <span className="text-xs font-medium text-[var(--color-ink-muted)]">{name}</span>
+      {gate === undefined ? (
+        <span className="text-[0.6875rem] text-[var(--color-ink-dim)]">Measuring…</span>
+      ) : (
+        <span className="flex items-center gap-3 text-[0.6875rem]">
+          <span className="text-[var(--color-ink-dim)]">
+            queue <span className="tnum text-[var(--color-ink)]">{formatCount(gate.queueLen)}</span>
+          </span>
+          <span className={`tnum font-semibold ${status.textClass}`}>
+            {Math.round(gate.utilizationPct)}%
+          </span>
+          <span className={`${status.textClass} w-14 text-right`}>{status.label}</span>
         </span>
-        <span className={`tnum font-semibold ${status.textClass}`}>
-          {Math.round(gate.utilizationPct)}%
-        </span>
-        <span className={`${status.textClass} w-14 text-right`}>{status.label}</span>
-      </span>
+      )}
     </li>
   );
 }
@@ -92,24 +113,20 @@ function GateRow({ gate }: { gate: GateStateDto }) {
 /**
  * The live zone and gate readout.
  *
- * @param props - Zones, gates, and loading state.
+ * @param props - Zones and gates. `loading` is accepted for API symmetry with
+ *   the other panels but is not needed: the static structure renders regardless.
  * @returns The panel.
  */
-export function ZoneGrid({ zones, gates, loading }: ZoneGridProps) {
-  if (loading && zones.length === 0) {
-    return (
-      <Panel title="Zones & Gates">
-        <PanelSkeleton lines={6} />
-      </Panel>
-    );
-  }
+export function ZoneGrid({ zones, gates }: ZoneGridProps) {
+  const zoneById = new Map(zones.map((z) => [z.id, z]));
+  const gateById = new Map(gates.map((g) => [g.id, g]));
 
   return (
     <Panel title="Zones & Gates">
       <h3 className="sr-only">Zone density</h3>
       <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {zones.map((zone) => (
-          <ZoneTile key={zone.id} zone={zone} />
+        {ZONES.map((zone) => (
+          <ZoneTile key={zone.id} name={zone.name} zone={zoneById.get(zone.id)} />
         ))}
       </ul>
 
@@ -117,8 +134,8 @@ export function ZoneGrid({ zones, gates, loading }: ZoneGridProps) {
         Gates
       </h3>
       <ul className="space-y-2">
-        {gates.map((gate) => (
-          <GateRow key={gate.id} gate={gate} />
+        {GATES.map((gate) => (
+          <GateRow key={gate.id} name={gate.name} gate={gateById.get(gate.id)} />
         ))}
       </ul>
     </Panel>
