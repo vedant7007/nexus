@@ -16,8 +16,16 @@ import { z } from 'zod';
 /** Gemini model id. `gemini-1.5-flash` is retired and 404s; 2.5-flash is current. */
 export const GEMINI_MODEL = 'gemini-2.5-flash';
 
-/** Hard ceiling on a single Gemini call, in milliseconds. */
-export const AI_TIMEOUT_MS = 4_000;
+/**
+ * Hard ceiling on a single Gemini call, in milliseconds.
+ *
+ * With extended thinking disabled (see `ai/client`), a real briefing or triage
+ * returns in ~2s. This ceiling sits well above that so ordinary network
+ * variance does not spuriously fall back to rule mode, while still bounding the
+ * wait — the deterministic panels are instant regardless, and the AI briefing
+ * only refreshes on a 20s cadence, so an 8s worst case is invisible in use.
+ */
+export const AI_TIMEOUT_MS = 8_000;
 
 /**
  * AI requests permitted per authenticated user per minute.

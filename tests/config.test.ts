@@ -32,7 +32,10 @@ describe('config', () => {
   });
 
   it('exposes sane AI guard rails', () => {
-    expect(AI_TIMEOUT_MS).toBeLessThanOrEqual(5_000);
+    // Bounded, but with real headroom over the ~2s a thinking-disabled call
+    // takes, so ordinary variance does not spuriously fall back to rule mode.
+    expect(AI_TIMEOUT_MS).toBeGreaterThan(0);
+    expect(AI_TIMEOUT_MS).toBeLessThanOrEqual(10_000);
     expect(AI_RATE_LIMIT_PER_MIN).toBeGreaterThan(0);
   });
 

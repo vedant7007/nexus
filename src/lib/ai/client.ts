@@ -18,11 +18,33 @@
  *     surprise `undefined` three layers away.
  *  4. **Server-only.** The API key never reaches a bundle.
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai';
 import type { z } from 'zod';
 
 import { AI_TIMEOUT_MS, GEMINI_MODEL, serverConfig } from '../config';
 import { describeError, logger } from '../server/logger';
+
+/**
+ * Generation config for every NEXUS call.
+ *
+ * `thinkingBudget: 0` disables gemini-2.5-flash's extended reasoning. Our tasks
+ * are rephrasing computed facts into prose and translating/classifying an
+ * incident — not multi-step reasoning — so thinking adds several seconds of
+ * latency for no quality gain. Disabling it cut a real briefing from ~7.9s to
+ * ~1.9s in testing, which is the difference between the AI path succeeding
+ * inside the timeout and silently falling back to rule mode on every call.
+ *
+ * `thinkingConfig` is a 2.5-model field the installed SDK version does not yet
+ * carry in `GenerationConfig`, so it is attached through a typed extension
+ * rather than an `as` cast to keep the value checked.
+ */
+interface ThinkingConfig {
+  thinkingConfig: { thinkingBudget: number };
+}
+
+const GENERATION_CONFIG: GenerationConfig & ThinkingConfig = {
+  thinkingConfig: { thinkingBudget: 0 },
+};
 
 /** Why an AI call did not produce usable output. */
 export type AiFailureReason = 'not_configured' | 'timeout' | 'upstream_error' | 'invalid_output';
@@ -109,7 +131,10 @@ export async function generateText(
   }
 
   try {
-    const model = client.getGenerativeModel({ model: GEMINI_MODEL });
+    const model = client.getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: GENERATION_CONFIG,
+    });
     const response = await withTimeout(model.generateContent(prompt), timeoutMs);
     const text = response.response.text().trim();
 
