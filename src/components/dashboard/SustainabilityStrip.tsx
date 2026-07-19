@@ -93,20 +93,20 @@ export function SustainabilityStrip({ snapshot, insight }: SustainabilityStripPr
               {metric.label}
             </dt>
             <dd className="tnum mt-1 text-xl font-bold text-[var(--color-ink)]">{metric.value}</dd>
-            <dd className="mt-0.5 text-[0.6875rem] text-[var(--color-ink-dim)]">
-              {metric.detail}
-              {metric.onTarget === null ? null : (
-                <span
-                  className={
-                    metric.onTarget
-                      ? 'ml-1.5 text-[var(--color-status-normal-text)]'
-                      : 'ml-1.5 text-[var(--color-status-elevated-text)]'
-                  }
-                >
-                  {metric.onTarget ? '✓ on target' : '▲ below target'}
-                </span>
-              )}
-            </dd>
+            <dd className="mt-0.5 text-[0.6875rem] text-[var(--color-ink-dim)]">{metric.detail}</dd>
+            {/* The target status sits on its own line so it never wraps
+                awkwardly under the detail text on a narrow column. */}
+            {metric.onTarget === null ? null : (
+              <dd
+                className={`mt-0.5 text-[0.6875rem] font-medium ${
+                  metric.onTarget
+                    ? 'text-[var(--color-status-normal-text)]'
+                    : 'text-[var(--color-status-elevated-text)]'
+                }`}
+              >
+                {metric.onTarget ? '✓ on target' : '▲ below target'}
+              </dd>
+            )}
           </div>
         ))}
       </dl>

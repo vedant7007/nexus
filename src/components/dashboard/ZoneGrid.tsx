@@ -43,10 +43,15 @@ function ZoneTile({ name, zone }: { name: string; zone: ZoneStateDto | undefined
 
   return (
     <li className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-xs font-medium text-[var(--color-ink-muted)]">{name}</span>
+      {/* items-start + a reserved two-line name box: long names ("East
+          Concourse") wrap in full instead of truncating, and the fixed height
+          keeps every tile the same size so the grid rows stay aligned. */}
+      <div className="flex min-h-[2.25rem] items-start justify-between gap-2">
+        <span className="text-xs font-medium leading-tight text-[var(--color-ink-muted)]">
+          {name}
+        </span>
         <span
-          className={`tnum text-sm font-bold ${zone === undefined ? 'text-[var(--color-ink-dim)]' : status.textClass}`}
+          className={`tnum shrink-0 text-sm font-bold ${zone === undefined ? 'text-[var(--color-ink-dim)]' : status.textClass}`}
         >
           {zone === undefined ? PENDING : `${Math.round(zone.densityPct)}%`}
         </span>
