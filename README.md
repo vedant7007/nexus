@@ -7,11 +7,11 @@ every operational feed, **spots crowd danger before it happens, tells you what t
 do and why, and lets any volunteer report an incident in any language and get an
 instant triaged response.**
 
-> **Trying it as a reviewer?** Create an account on the
-> [login page](https://nexus-zuxwfnsdga-el.a.run.app/login) (email + password, no
-> confirmation step), use **Continue with Google**, or sign in with the demo
-> account **`demo@nexus.app` / `NexusDemo2026!`**. Then pick the _“Gate C surge”_
-> scenario and follow the 20-second demo below.
+> **Trying it as a reviewer?** On the
+> [login page](https://nexus-zuxwfnsdga-el.a.run.app/login), create an account with
+> email + password (self-service, no confirmation step) or use **Continue with
+> Google**. Then pick the _“Gate C surge”_ scenario and follow the 20-second demo
+> below.
 
 ---
 
