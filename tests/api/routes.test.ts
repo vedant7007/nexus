@@ -7,6 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetAiCache } from '@/lib/ai/cache';
 import { AI_RATE_LIMIT_PER_MIN, resetConfigCache } from '@/lib/config';
 import { resetRateLimits } from '@/lib/server/rateLimit';
 import { InMemoryIncidentRepository } from '@/lib/server/repository';
@@ -65,6 +66,7 @@ beforeEach(() => {
   setRepositoryForTests(repo);
   resetRateLimits();
   resetConfigCache();
+  resetAiCache();
   generateJson.mockReset();
   generateText.mockReset();
   generateJson.mockResolvedValue(AI_PROPOSAL);

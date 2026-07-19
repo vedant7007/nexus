@@ -87,6 +87,8 @@ export interface BriefingOptions {
   scenario: ScenarioId;
   tick: number;
   kind: 'situation' | 'sustainability';
+  /** Refresh interval in ms. Defaults to {@link BRIEFING_REFRESH_MS}. */
+  refreshMs?: number;
   /**
    * A value that, when it changes, forces an immediate refresh outside the slow
    * cadence. The dashboard passes the overall risk level, so the moment a
@@ -131,7 +133,7 @@ export function useBriefing(options: BriefingOptions): PolledResource<BriefingDt
     [scenario, kind, getToken, tickRef, revalidateKey],
   );
 
-  return usePolledResource(fetcher, BRIEFING_REFRESH_MS);
+  return usePolledResource(fetcher, options.refreshMs ?? BRIEFING_REFRESH_MS);
 }
 
 /**

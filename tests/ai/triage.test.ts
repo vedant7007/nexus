@@ -6,6 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetAiCache } from '@/lib/ai/cache';
 import { resetConfigCache } from '@/lib/config';
 
 const generateJson = vi.hoisted(() => vi.fn());
@@ -43,6 +44,7 @@ function proposal(over: Record<string, unknown> = {}) {
 beforeEach(() => {
   generateJson.mockReset();
   resetConfigCache();
+  resetAiCache();
 });
 
 afterEach(() => {
@@ -274,6 +276,11 @@ describe('triageIncident — AI and rule modes agree on safety', () => {
     );
     const withAi = await triageIncident(text, CONTEXT);
 
+    // Clear the AI-understanding cache: this test deliberately drives the SAME
+    // text through two backend states, which the cache would otherwise (rightly)
+    // short-circuit. A real repeated report reuses the translation; here we want
+    // the fresh rule-mode path.
+    resetAiCache();
     generateJson.mockResolvedValue({ ok: false, reason: 'timeout', detail: 'timeout' });
     const withoutAi = await triageIncident(text, CONTEXT);
 

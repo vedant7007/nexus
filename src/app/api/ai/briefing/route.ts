@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { generateSustainabilityInsight } from '@/lib/ai/briefing';
 import { withRoute } from '@/lib/server/handler';
 import {
   briefingFor,
   resolveScenario,
   resolveTick,
   situationFor,
+  sustainabilityFor,
 } from '@/lib/server/situationService';
 import { isScenarioId } from '@/lib/sim/scenarios';
 
@@ -41,8 +41,8 @@ export const POST = withRoute<z.infer<typeof bodySchema>, BriefingResponse>(
 
     const result =
       body.kind === 'sustainability'
-        ? await generateSustainabilityInsight(report.snapshot)
-        : await briefingFor(report);
+        ? await sustainabilityFor(report, scenario)
+        : await briefingFor(report, scenario);
 
     return { ...result, generatedAt: report.generatedAt };
   },

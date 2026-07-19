@@ -14,7 +14,9 @@ import { useCallback, useState } from 'react';
 
 import { NavBar } from '@/components/NavBar';
 import type { ScenarioId } from '@/lib/sim/scenarios';
+import { LEVEL_SETTLE_MS, SUSTAINABILITY_REFRESH_MS } from '@/lib/ui/constants';
 import { useBriefing, useRecommendations, useSituation, useSnapshot } from '@/lib/ui/hooks';
+import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { useEscalation } from '@/lib/ui/useEscalation';
 import { useSimClock } from '@/lib/ui/useSimClock';
 
@@ -43,14 +45,22 @@ export function DashboardView() {
   // changes, re-fetch them immediately rather than waiting out their slow
   // cadence. This is what makes the escalation read as one coordinated moment.
   const level = situation.data?.overall;
-  const briefing = useBriefing({ scenario, tick, kind: 'situation', revalidateKey: level });
-  const sustainability = useBriefing({ scenario, tick, kind: 'sustainability' });
-  const recommendations = useRecommendations(scenario, tick, level);
+  // Debounced level drives the costly AI refetch, so band-boundary jitter cannot
+  // flap it and burn quota; the live status pill below uses the raw level.
+  const settledLevel = useDebouncedValue(level, LEVEL_SETTLE_MS);
+  const briefing = useBriefing({ scenario, tick, kind: 'situation', revalidateKey: settledLevel });
+  const sustainability = useBriefing({
+    scenario,
+    tick,
+    kind: 'sustainability',
+    refreshMs: SUSTAINABILITY_REFRESH_MS,
+  });
+  const recommendations = useRecommendations(scenario, tick, settledLevel);
 
   const overall = level ?? null;
-  // A one-shot flash on the briefing when the board escalates, so the change
-  // reads as a coordinated moment alongside the pulsing status pill.
-  const escalationToken = useEscalation(overall);
+  // The flash fires on the settled level, so it marks a real escalation
+  // alongside the AI refresh rather than flickering on boundary jitter.
+  const escalationToken = useEscalation(settledLevel ?? null);
 
   // Hoisted once so the JSX below stays branch-light (and each fallback is
   // evaluated a single time per render, not per use).

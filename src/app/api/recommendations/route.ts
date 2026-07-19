@@ -22,7 +22,7 @@ export const GET = withRoute<undefined, RecommendationsResult>(
     const scenario = resolveScenario(url.searchParams.get('scenario'));
     const tick = resolveTick(url.searchParams.get('tick'), url.searchParams.get('startedAt'));
 
-    return recommendationsFor(situationFor(scenario, tick));
+    return recommendationsFor(situationFor(scenario, tick), scenario);
   },
 );
 

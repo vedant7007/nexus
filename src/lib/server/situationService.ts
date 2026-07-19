@@ -8,8 +8,14 @@
  * assess deterministically, *then* hand the finished facts to the AI. The AI is
  * always last and always optional.
  */
-import { type Recommendation, generateBriefing, generateReasoning } from '../ai/briefing';
+import {
+  type Recommendation,
+  generateBriefing,
+  generateReasoning,
+  generateSustainabilityInsight,
+} from '../ai/briefing';
 import type { AiMode } from '../ai/briefing';
+import { cachedAi } from '../ai/cache';
 import { mitigationsFor } from '../engine/flow';
 import { buildSituationReport } from '../engine/situation';
 import type { SituationReport } from '../engine/types';
@@ -93,7 +99,25 @@ export interface RecommendationsResult {
  * @returns Recommendations, most urgent first, and the overall mode. Reports
  *   'rule' if any reasoning fell back, so the UI badge never overclaims.
  */
-export async function recommendationsFor(report: SituationReport): Promise<RecommendationsResult> {
+export async function recommendationsFor(
+  report: SituationReport,
+  scenario: ScenarioId,
+): Promise<RecommendationsResult> {
+  return cachedAi(
+    `recs:${scenario}:${report.overall}`,
+    () => buildRecommendations(report),
+    (result) => result.mode === 'ai',
+  );
+}
+
+/**
+ * Builds recommendations without the cache. Extracted so {@link recommendationsFor}
+ * can wrap it.
+ *
+ * @param report - The deterministic report.
+ * @returns Recommendations and the overall mode.
+ */
+async function buildRecommendations(report: SituationReport): Promise<RecommendationsResult> {
   const targets = report.risks.slice(0, MAX_AI_RECOMMENDATIONS);
 
   const built = await Promise.all(
@@ -127,11 +151,37 @@ export async function recommendationsFor(report: SituationReport): Promise<Recom
 }
 
 /**
- * Produces the AI situational briefing for a report.
+ * Produces the AI situational briefing for a report, cached by scenario+level.
  *
  * @param report - The deterministic report.
+ * @param scenario - The active scenario, part of the cache key.
  * @returns The briefing and its mode.
  */
-export async function briefingFor(report: SituationReport): ReturnType<typeof generateBriefing> {
-  return generateBriefing(report);
+export async function briefingFor(
+  report: SituationReport,
+  scenario: ScenarioId,
+): ReturnType<typeof generateBriefing> {
+  return cachedAi(
+    `brief:${scenario}:${report.overall}`,
+    () => generateBriefing(report),
+    (result) => result.mode === 'ai',
+  );
+}
+
+/**
+ * Produces the AI sustainability insight, cached by scenario+level.
+ *
+ * @param report - The deterministic report (its snapshot drives the insight).
+ * @param scenario - The active scenario, part of the cache key.
+ * @returns The insight and its mode.
+ */
+export async function sustainabilityFor(
+  report: SituationReport,
+  scenario: ScenarioId,
+): ReturnType<typeof generateSustainabilityInsight> {
+  return cachedAi(
+    `sustain:${scenario}:${report.overall}`,
+    () => generateSustainabilityInsight(report.snapshot),
+    (result) => result.mode === 'ai',
+  );
 }

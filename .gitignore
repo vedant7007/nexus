@@ -22,3 +22,8 @@ screenshots/
 # Untracked credential paste — never commit.
 .env copy.example
 *.example.local
+
+# Any env backup/variant — the .audit-bak leak taught us the pattern is wider than *.local
+.env.local.*
+.env.*.bak
+*.audit-bak

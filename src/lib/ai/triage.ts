@@ -32,6 +32,7 @@ import { classifySeverity, escalateForZoneRisk } from '../engine/severity';
 import type { IncidentType, TriageDecision } from '../engine/types';
 
 import type { AiMode } from './briefing';
+import { cachedAi } from './cache';
 import { generateJson } from './client';
 import { templatedProtocol } from './fallbacks';
 
@@ -160,7 +161,15 @@ export async function triageIncident(
   rawText: string,
   context: TriageContext,
 ): Promise<TriageResult> {
-  const result = await generateJson(triagePrompt(rawText), triageProposalSchema);
+  // Cache only the AI *understanding* (language, translation, category), keyed
+  // by the text. The safety decision below re-runs fresh every time with the
+  // live context, so the severity interlock is never served from cache — a
+  // repeated report gets a free translation but its own up-to-date triage.
+  const result = await cachedAi(
+    `triage:${rawText.trim().toLowerCase()}`,
+    () => generateJson(triagePrompt(rawText), triageProposalSchema),
+    (r) => r.ok,
+  );
 
   if (!result.ok) {
     // No translation available, so the keyword scan runs on the raw text alone.

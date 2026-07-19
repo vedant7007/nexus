@@ -18,22 +18,35 @@
 export const SIM_POLL_MS = 3_000;
 
 /**
- * How often the AI briefing refreshes, in milliseconds.
+ * How often the AI situational briefing refreshes, in milliseconds.
  *
- * Far slower than the snapshot, and deliberately so: each refresh costs a Gemini
- * call against a 15/min budget, and a briefing that rewrites itself every three
- * seconds is unreadable in a control room. Twenty seconds keeps it current
- * without spending the budget or the operator's attention.
+ * Deliberately slow. Each refresh costs a Gemini call against a shared ~15/min
+ * free-tier ceiling, so steady-state polling is kept frugal — the *important*
+ * updates are event-driven, not timer-driven: the briefing re-fetches the
+ * instant the overall risk level changes (see `useEscalation` / `revalidateKey`
+ * in the hooks). The timer is only a backstop for slow drift, so 35s is ample
+ * and a control-room briefing that rewrote itself every few seconds would be
+ * unreadable anyway.
  */
-export const BRIEFING_REFRESH_MS = 20_000;
+export const BRIEFING_REFRESH_MS = 35_000;
+
+/**
+ * How often the sustainability insight refreshes, in milliseconds.
+ *
+ * Slowest of the three AI panels: energy/waste/transport figures move
+ * gradually, so a 90s cadence keeps it current at a fraction of the quota. It
+ * has no level-change trigger — nothing about it is time-critical.
+ */
+export const SUSTAINABILITY_REFRESH_MS = 90_000;
 
 /**
  * How often recommendations refresh, in milliseconds.
  *
  * Offset from the briefing cadence so the two AI panels do not fire their calls
- * in the same instant and trip the rate limiter together.
+ * in the same instant. Like the briefing, it also re-fetches immediately on a
+ * level change, so this timer is a backstop rather than the primary trigger.
  */
-export const RECOMMENDATIONS_REFRESH_MS = 25_000;
+export const RECOMMENDATIONS_REFRESH_MS = 40_000;
 
 /** How often the incident log re-reads, in milliseconds. No AI cost. */
 export const INCIDENTS_POLL_MS = 10_000;
@@ -51,6 +64,16 @@ export const DEMO_START_TICK = 18;
 
 /** Density percentage at or above which a zone tile reads as full. */
 export const ZONE_TILE_FULL_PCT = 100;
+
+/**
+ * How long the overall risk level must hold before it triggers an AI-panel
+ * refresh, in milliseconds.
+ *
+ * Longer than a couple of simulator ticks, so band-boundary jitter cannot flap
+ * the level and burn Gemini quota; short enough that a genuine escalation still
+ * reaches the AI panels within a few seconds. The status pill is not debounced.
+ */
+export const LEVEL_SETTLE_MS = 6_000;
 
 /** Maximum recommendation cards rendered at once. */
 export const MAX_VISIBLE_RECOMMENDATIONS = 3;
