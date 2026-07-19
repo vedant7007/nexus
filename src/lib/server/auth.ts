@@ -1,13 +1,6 @@
-/**
- * @module server/auth
- *
- * Responsibility: establish who is making a request, or refuse it.
- *
- * NEXUS is an operations tool: every route is behind auth, and there is no
- * anonymous read path. The client sends a Firebase ID token as a bearer token
- * and the Admin SDK verifies its signature and expiry server-side. A token is
- * never trusted because it looks well-formed.
- */
+// Every route is behind auth; there is no anonymous read path. The Admin SDK
+// verifies the bearer token's signature and expiry server-side — a token is
+// never trusted because it looks well-formed.
 import { getAuth } from 'firebase-admin/auth';
 
 import { isFirebaseConfigured, serverConfig } from '../config';
@@ -22,27 +15,17 @@ export interface AuthedUser {
   email: string | undefined;
 }
 
-/**
- * Extracts a bearer token from an Authorization header.
- *
- * @param header - The raw header value, if present.
- * @returns The token, or null when the header is missing or malformed.
- */
+/** Extracts a bearer token, or null when the header is missing or malformed. */
 export function parseBearer(header: string | null): string | null {
   if (header === null) return null;
 
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  const token = match?.[1]?.trim();
-  return token === undefined || token.length === 0 ? null : token;
+  // (\S+) rather than (.+): a token has no internal whitespace, and the tighter
+  // class removes the \s+/.+ overlap that makes the pattern backtrack.
+  const match = /^Bearer\s+(\S+)$/i.exec(header.trim());
+  return match?.[1] ?? null;
 }
 
-/**
- * Verifies the caller's Firebase ID token.
- *
- * @param request - The incoming request.
- * @returns The authenticated user.
- * @throws {AppError} 401 when the token is missing, malformed, or invalid.
- */
+/** Verifies the caller's Firebase ID token, or throws 401. */
 export async function requireUser(request: Request): Promise<AuthedUser> {
   const token = parseBearer(request.headers.get('authorization'));
   if (token === null) throw unauthenticated('Missing bearer token.');

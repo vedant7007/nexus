@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/dashboard/TopBar
- *
- * Responsibility: venue identity, the hero status, and the scenario control.
- */
 import { StatusPill } from '@/components/ui/StatusPill';
 import type { RiskLevel } from '@/lib/engine/types';
 import type { ScenarioId } from '@/lib/sim/scenarios';
@@ -12,7 +7,6 @@ import { VENUE_NAME } from '@/lib/sim/venue';
 
 import { ScenarioPicker } from './ScenarioPicker';
 
-/** Props for {@link TopBar}. */
 export interface TopBarProps {
   overall: RiskLevel | null;
   tMinusKickoffMin: number | null;
@@ -20,24 +14,14 @@ export interface TopBarProps {
   onScenarioChange: (value: ScenarioId) => void;
 }
 
-/**
- * Renders the countdown to kickoff.
- *
- * @param minutes - Minutes to kickoff; negative after.
- * @returns A short label.
- */
+/** Renders the countdown to kickoff. */
 function kickoffLabel(minutes: number): string {
   if (minutes > 0) return `T−${minutes} min`;
   if (minutes === 0) return 'Kickoff';
   return `${Math.abs(minutes)} min in`;
 }
 
-/**
- * The command center's top bar.
- *
- * @param props - Status, countdown, and scenario control.
- * @returns The bar.
- */
+/** The command center's top bar. */
 export function TopBar({ overall, tMinusKickoffMin, scenario, onScenarioChange }: TopBarProps) {
   return (
     <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">

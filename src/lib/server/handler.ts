@@ -1,17 +1,8 @@
-/**
- * @module server/handler
- *
- * Responsibility: make every route behave identically at its edges.
- *
- * Auth, validation, rate limiting, error shape, and the guarantee that an
- * unexpected throw becomes a bare 500 with the detail logged rather than
- * serialised — all of it happens here, once. A route body only ever contains
- * what makes that route different.
- *
- * The alternative is each route remembering to try/catch, remembering not to
- * echo `error.message`, remembering the error envelope. One of them eventually
- * forgets, and that one leaks a stack trace to a judge.
- */
+// Centralises every route's edges — auth, validation, rate limiting, error
+// envelope, and turning an unexpected throw into a bare 500 with the detail
+// logged not serialised — in one place. The alternative is each route
+// remembering not to echo `error.message`; one eventually forgets and leaks a
+// stack trace.
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 
@@ -47,12 +38,7 @@ export interface RouteOptions<TBody> {
   rateLimit?: boolean;
 }
 
-/**
- * Flattens Zod issues into per-field messages.
- *
- * @param error - The Zod error.
- * @returns Field path to messages.
- */
+/** Flattens Zod issues into per-field messages. */
 function toFieldErrors(error: z.ZodError): Record<string, string[]> {
   const fields: Record<string, string[]> = {};
   for (const issue of error.issues) {
@@ -62,13 +48,7 @@ function toFieldErrors(error: z.ZodError): Record<string, string[]> {
   return fields;
 }
 
-/**
- * Converts any thrown value into a safe response.
- *
- * @param error - The caught value.
- * @param route - Route name, for logging.
- * @returns The error response.
- */
+/** Converts any thrown value into a safe response. */
 function toErrorResponse(error: unknown, route: string): NextResponse<ErrorBody> {
   if (isAppError(error)) {
     return NextResponse.json(error.toBody(), { status: error.status });
@@ -81,14 +61,7 @@ function toErrorResponse(error: unknown, route: string): NextResponse<ErrorBody>
   return NextResponse.json(internal.toBody(), { status: 500 });
 }
 
-/**
- * Wraps a route body with auth, validation, rate limiting, and error handling.
- *
- * @param route - Route name, used in logs.
- * @param options - Body schema and rate-limit policy.
- * @param handle - The route body. Runs only once every edge is satisfied.
- * @returns A Next.js route handler.
- */
+/** Wraps a route body with auth, validation, rate limiting, and error handling. */
 export function withRoute<TBody = undefined, TResult = unknown>(
   route: string,
   options: RouteOptions<TBody>,
@@ -122,14 +95,7 @@ export function withRoute<TBody = undefined, TResult = unknown>(
   };
 }
 
-/**
- * Reads and validates a JSON body.
- *
- * @param request - The incoming request.
- * @param schema - The schema, if this route takes a body.
- * @returns The validated body, or undefined when no schema was given.
- * @throws {AppError} 400 when the body is unparseable or fails validation.
- */
+/** Reads and validates a JSON body, or throws a 400 when it fails. */
 async function parseBody<TBody>(
   request: Request,
   schema: BodySchema<TBody> | undefined,

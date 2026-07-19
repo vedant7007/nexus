@@ -1,15 +1,8 @@
-/**
- * @module sim/scenarios
- *
- * Responsibility: named operational situations the control room can be placed in.
- *
- * A scenario is a set of *modifiers* on the baseline simulation — not a canned
- * script of outputs. The simulator still computes every number; a scenario only
- * changes the conditions it computes under. That distinction matters: it means
- * the risks a judge watches appear because the engine genuinely detected them.
- */
+// A scenario is a set of *modifiers* on the baseline simulation, not a canned
+// script of outputs. The simulator still computes every number; a scenario only
+// changes the conditions it computes under, so the risks a judge watches appear
+// because the engine genuinely detected them.
 
-/** Identifier of a selectable scenario. */
 export type ScenarioId =
   | 'normal'
   | 'gate_surge'
@@ -56,7 +49,6 @@ export interface Scenario {
   tempC: number;
   /** Relative humidity, 0–100. */
   humidityPct: number;
-  /** Weather description. */
   condition: string;
   /** Multiplier on baseline energy draw. */
   energyMultiplier: number;
@@ -154,22 +146,11 @@ export const SCENARIOS: Readonly<Record<ScenarioId, Scenario>> = Object.freeze({
   },
 });
 
-/**
- * Resolves a scenario id to its definition.
- *
- * @param id - The scenario to resolve.
- * @returns The scenario definition.
- */
 export function getScenario(id: ScenarioId): Scenario {
   return SCENARIOS[id];
 }
 
-/**
- * Narrows an arbitrary string to a ScenarioId.
- *
- * @param value - Candidate value, typically from a query parameter.
- * @returns True when the value names a real scenario.
- */
+/** Narrows an arbitrary string (e.g. a query parameter) to a ScenarioId. */
 export function isScenarioId(value: string): value is ScenarioId {
   return SCENARIO_IDS.includes(value as ScenarioId);
 }

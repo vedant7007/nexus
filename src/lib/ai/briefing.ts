@@ -1,20 +1,10 @@
-/**
- * @module ai/briefing
- *
- * Responsibility: turn the engine's SituationReport into control-room language,
- * and produce the reasoning behind each recommendation.
- *
- * The prompts here are built to make invention *hard*. The model is handed a
- * closed set of facts and told, explicitly and repeatedly, that it may not
- * introduce a number that is not in them. That instruction is necessary but not
- * sufficient — an LLM will still occasionally round "94.2%" to "almost 95%" or
- * embellish an ETA. So the architecture does not depend on it: nothing the model
- * says here feeds back into a safety decision. The engine has already decided
- * what is dangerous and what to do about it. This layer only explains.
- *
- * That is the whole trick. The AI is load-bearing for *comprehension* and
- * carries none of the weight for *correctness*.
- */
+// Turn the engine's SituationReport into control-room language, and produce the
+// reasoning behind each recommendation. The prompts are built to make invention
+// *hard* — the model gets a closed set of facts and is told it may not introduce a
+// number not in them — but the architecture does not depend on that holding: an LLM
+// will still occasionally round "94.2%" to "almost 95%", and nothing the model says
+// here feeds back into a safety decision. The AI is load-bearing for *comprehension*
+// and carries none of the weight for *correctness*.
 import { z } from 'zod';
 
 import { sustainabilitySummary } from '../engine/sustainability';
@@ -42,9 +32,6 @@ const BRIEFING_MAX_CHARS = 1_200;
  * Deliberately a projection of the snapshot rather than the snapshot itself:
  * anything not in here cannot be cited, and the smaller the surface, the less
  * there is to hallucinate around.
- *
- * @param report - The deterministic report.
- * @returns A compact, model-facing fact sheet.
  */
 export function factSheet(report: SituationReport): string {
   const { snapshot, overall, risks } = report;
@@ -88,12 +75,6 @@ const GROUNDING_RULES = `RULES — these are absolute:
 - If a fact is not listed above, do not mention it.
 - Never speculate about causes that are not stated.`;
 
-/**
- * Builds the situational briefing prompt.
- *
- * @param report - The deterministic report.
- * @returns The full prompt.
- */
 export function briefingPrompt(report: SituationReport): string {
   return `You are the AI situational analyst in the control room of a FIFA World Cup stadium. You are speaking to experienced venue operations staff during a live match day.
 
@@ -110,12 +91,7 @@ TASK: Write a briefing of 4 to 6 sentences giving the operations team situationa
 Briefing:`;
 }
 
-/**
- * Produces a situational briefing, falling back to a templated one.
- *
- * @param report - The deterministic report.
- * @returns The briefing and the mode that produced it. Never throws.
- */
+/** Produces a situational briefing, falling back to a templated one. Never throws. */
 export async function generateBriefing(report: SituationReport): Promise<Briefing> {
   const result = await generateText(briefingPrompt(report));
 
@@ -132,9 +108,6 @@ export async function generateBriefing(report: SituationReport): Promise<Briefin
  * the defence against that is architectural (the model never decides anything),
  * not a regex. What it does catch is the degenerate output that would look
  * broken on screen: an empty string, a refusal, or a wall of text.
- *
- * @param text - Model output.
- * @returns True when the text is worth showing.
  */
 export function isPlausibleBriefing(text: string): boolean {
   return text.length >= BRIEFING_MIN_CHARS && text.length <= BRIEFING_MAX_CHARS;
@@ -153,7 +126,6 @@ export interface Recommendation {
   reasoning: string;
 }
 
-/** Schema for the model's reasoning output. */
 const reasoningSchema = z.object({
   reasoning: z.string().min(20).max(600),
 });
@@ -164,11 +136,6 @@ const reasoningSchema = z.object({
  * Note what is *not* asked for: which action to take, or what it will achieve.
  * Both are already decided and quantified. The model is given the answer and
  * asked to explain it — that ordering is what makes the output safe to trust.
- *
- * @param risk - The risk being mitigated.
- * @param chosen - The engine's chosen mitigation.
- * @param alternatives - Other options the engine considered.
- * @returns The full prompt.
  */
 export function reasoningPrompt(
   risk: Risk,
@@ -207,14 +174,7 @@ Return strict JSON only, in exactly this shape:
 {"reasoning": "<your 2-3 sentences>"}`;
 }
 
-/**
- * Produces reasoning for a chosen mitigation, falling back to a template.
- *
- * @param risk - The risk being mitigated.
- * @param chosen - The engine's chosen mitigation.
- * @param alternatives - Other options the engine considered.
- * @returns The reasoning text and the mode that produced it.
- */
+/** Produces reasoning for a chosen mitigation, falling back to a template. */
 export async function generateReasoning(
   risk: Risk,
   chosen: Mitigation,
@@ -231,12 +191,6 @@ export async function generateReasoning(
   return { reasoning: result.value.reasoning, mode: 'ai' };
 }
 
-/**
- * Builds the sustainability insight prompt.
- *
- * @param snapshot - The venue snapshot.
- * @returns The full prompt.
- */
 export function sustainabilityPrompt(snapshot: Snapshot): string {
   const summary = sustainabilitySummary(snapshot);
 
@@ -259,12 +213,7 @@ Lead with whatever is furthest from target. Plain prose, no markdown.
 Insight:`;
 }
 
-/**
- * Produces a sustainability insight, falling back to a templated one.
- *
- * @param snapshot - The venue snapshot.
- * @returns The insight and the mode that produced it.
- */
+/** Produces a sustainability insight, falling back to a templated one. */
 export async function generateSustainabilityInsight(snapshot: Snapshot): Promise<Briefing> {
   const result = await generateText(sustainabilityPrompt(snapshot));
 

@@ -12,10 +12,6 @@ import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'r
  * scrolls into view, letting CSS settle it in. It observes once, then
  * disconnects; a revealed section never un-reveals. If JS never runs or motion
  * is reduced, the element simply stays visible.
- *
- * @param as - The element/tag to render (defaults to a div).
- * @param delay - Optional stagger, in ms, before the reveal transition starts.
- * @param className - Extra classes merged after the reveal marker.
  */
 export function Reveal({
   as,

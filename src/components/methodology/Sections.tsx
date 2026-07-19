@@ -1,12 +1,6 @@
-/**
- * @module components/methodology/Sections
- *
- * Responsibility: the content of the trust page.
- *
- * Every constant is imported from the engine rather than retyped. A trust page
- * that can drift from the code it describes is worse than no trust page: it
- * would be documentation lying with authority.
- */
+// Every constant is imported from the engine rather than retyped: a trust page
+// that can drift from the code it describes is worse than no trust page — it
+// would be documentation lying with authority.
 import { OVERFLOW_LANE_UPLIFT, STAFF_SURGE_UPLIFT } from '@/lib/engine/flow';
 import { SEV1_KEYWORDS, TEAMS } from '@/lib/engine/severity';
 import {
@@ -19,12 +13,7 @@ import {
 } from '@/lib/engine/thresholds';
 import { VENUE_CAPACITY, VENUE_NAME } from '@/lib/sim/venue';
 
-/**
- * A titled section of the trust page.
- *
- * @param props - Heading and content.
- * @returns The section.
- */
+/** A titled section of the trust page. */
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="panel p-6">

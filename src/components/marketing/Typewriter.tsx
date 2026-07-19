@@ -9,11 +9,6 @@ import { useEffect, useState } from 'react';
  * Honours reduced-motion: if the user asked the OS for less motion we skip the
  * animation entirely and render the first phrase as static text (no caret),
  * so the headline is always legible and never jitters.
- *
- * @param phrases - The rotating strings to type.
- * @param typeMs - Per-character type delay.
- * @param deleteMs - Per-character delete delay.
- * @param holdMs - Pause once a phrase is fully typed.
  */
 export function Typewriter({
   phrases,

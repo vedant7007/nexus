@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/LoginForm
- *
- * Responsibility: sign an operator in.
- */
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -31,9 +26,6 @@ const ERROR_COPY: Record<string, string> = {
  * The wrong-password and user-not-found cases map to the *same* message on
  * purpose: distinguishing them tells an attacker which half of the pair was
  * right, turning the form into an account enumerator.
- *
- * @param error - The caught value.
- * @returns A user-facing message.
  */
 export function toLoginMessage(error: unknown): string {
   const code =
@@ -55,7 +47,6 @@ function RedirectingNotice() {
 const PRIMARY_BUTTON =
   'w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-void)] transition-colors hover:bg-[var(--color-accent-strong)] disabled:opacity-60';
 
-/** The "or" divider between the email form and the Google button. */
 function OrDivider() {
   return (
     <div className="my-5 flex items-center gap-3">
@@ -66,7 +57,6 @@ function OrDivider() {
   );
 }
 
-/** The Google sign-in button. */
 function GoogleButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
   return (
     <button
@@ -80,7 +70,6 @@ function GoogleButton({ busy, onClick }: { busy: boolean; onClick: () => void })
   );
 }
 
-/** The footer link that flips between sign-in and create-account. */
 function ModeToggle({
   signup,
   busy,
@@ -111,8 +100,6 @@ function ModeToggle({
  * One form serves both modes: operators returning to the console sign in, and
  * first-time visitors (including judges hitting the live URL) create an account
  * with no console step. Google sign-in is offered alongside.
- *
- * @returns The form.
  */
 export function LoginForm() {
   const { signInWithEmail, signUpWithEmail, signInWithGoogle, user, configured } = useAuth();

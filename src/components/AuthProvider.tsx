@@ -1,15 +1,8 @@
 'use client';
 
-/**
- * @module components/AuthProvider
- *
- * Responsibility: hold the signed-in user and supply ID tokens.
- *
- * The token provider is exposed rather than the token itself: Firebase ID
- * tokens expire hourly, so anything that caches the string will eventually send
- * a stale one. `getIdToken()` refreshes transparently, so callers ask for a
- * token at the moment they need it.
- */
+// Exposes a token provider rather than the token itself: Firebase ID tokens
+// expire hourly, so a cached string eventually goes stale. `getIdToken()`
+// refreshes transparently, so callers ask for a token when they need it.
 import {
   GoogleAuthProvider,
   type User,
@@ -25,7 +18,6 @@ import { isFirebaseConfigured } from '@/lib/config';
 import type { TokenProvider } from '@/lib/ui/apiClient';
 import { getAuthClient } from '@/lib/ui/firebaseClient';
 
-/** What the auth context exposes. */
 export interface AuthState {
   user: User | null;
   /** True until the initial auth check resolves. */
@@ -51,12 +43,7 @@ const AuthContext = createContext<AuthState | null>(null);
  */
 const DEV_TOKEN = 'local-development';
 
-/**
- * Provides authentication state to the tree.
- *
- * @param props - Standard children.
- * @returns The provider.
- */
+/** Provides authentication state to the tree. */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -133,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 /**
  * Reads authentication state.
  *
- * @returns The auth state.
  * @throws {Error} When called outside an {@link AuthProvider}.
  */
 export function useAuth(): AuthState {

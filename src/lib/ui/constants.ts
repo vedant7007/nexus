@@ -1,12 +1,6 @@
-/**
- * @module ui/constants
- *
- * Responsibility: every tunable number the UI uses, named and in one place.
- *
- * Nothing here may be inlined at a call site. A `3000` in a JSX prop is a number
- * nobody can search for, review, or reason about six months later; `SIM_POLL_MS`
- * is a decision with a name and a rationale.
- */
+// Every tunable number the UI uses, named and in one place. Nothing here may be
+// inlined at a call site: a `3000` in a JSX prop is unsearchable, whereas
+// `SIM_POLL_MS` is a decision with a name and a rationale.
 
 /**
  * How often the dashboard re-reads the live snapshot, in milliseconds.

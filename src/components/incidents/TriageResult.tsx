@@ -1,22 +1,14 @@
 'use client';
 
-/**
- * @module components/incidents/TriageResult
- *
- * Responsibility: show what triage decided, and make unmistakably clear which
- * parts the AI produced and which the engine did.
- *
- * The visual split here is the argument. Translation and category sit in one
- * block labelled as AI understanding; severity and routing sit in another,
- * labelled rule-based, with the rule that fired quoted underneath. An operator
- * should be able to see at a glance that the thing which decided "SEV-1" was
- * not the thing that guessed the language.
- */
+// The visual split here is the argument. Translation and category sit in one
+// block labelled as AI understanding; severity and routing sit in another,
+// labelled rule-based, with the rule that fired quoted underneath. An operator
+// should be able to see at a glance that the thing which decided "SEV-1" was
+// not the thing that guessed the language.
 import { ModeBadge } from '@/components/ui/ModeBadge';
 import type { TriagePreviewDto } from '@/lib/schemas/api';
 import { severityOf } from '@/lib/ui/status';
 
-/** Props for {@link TriageResult}. */
 export interface TriageResultProps {
   result: TriagePreviewDto;
 }
@@ -31,12 +23,7 @@ const TYPE_LABEL: Record<string, string> = {
   transport: 'Transport',
 };
 
-/**
- * The triage outcome for a report.
- *
- * @param props - The triage preview to render.
- * @returns The result panel.
- */
+/** The triage outcome for a report. */
 export function TriageResult({ result }: TriageResultProps) {
   const severity = severityOf(result.severity);
 

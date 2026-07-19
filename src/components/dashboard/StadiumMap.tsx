@@ -1,20 +1,13 @@
 'use client';
 
-/**
- * @module components/dashboard/StadiumMap
- *
- * Responsibility: show where the pressure is, spatially.
- *
- * A schematic, not a map and not a game: eight arcs around a pitch, tinted by
- * density. Its job is to answer "where?" in one glance, which a table of eight
- * percentages cannot do. It is inline SVG with no library, so it costs nothing
- * on the critical path.
- */
+// A schematic, not a map and not a game: eight arcs around a pitch, tinted by
+// density. Its job is to answer "where?" in one glance, which a table of eight
+// percentages cannot do. It is inline SVG with no library, so it costs nothing
+// on the critical path.
 import { Panel } from '@/components/ui/Panel';
 import type { ZoneStateDto } from '@/lib/ui/dto';
 import { densityBand, statusOf } from '@/lib/ui/status';
 
-/** Props for {@link StadiumMap}. */
 export interface StadiumMapProps {
   zones: readonly ZoneStateDto[];
 }
@@ -53,9 +46,6 @@ const BLOCKS: readonly ZoneBlock[] = [
  * elements would make a screen reader announce the same figures twice — the
  * zone grid already states them, so here the graphic is decoration over a
  * text equivalent.
- *
- * @param props - The zones to render.
- * @returns The schematic.
  */
 export function StadiumMap({ zones }: StadiumMapProps) {
   const byId = new Map(zones.map((zone) => [zone.id, zone]));

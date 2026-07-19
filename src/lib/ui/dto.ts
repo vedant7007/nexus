@@ -1,11 +1,5 @@
-/**
- * @module ui/dto
- *
- * Responsibility: the names components use for the shapes they render.
- *
- * Re-exported from the wire schemas rather than redeclared, so a component's
- * props and the validator that admits the data cannot drift apart.
- */
+// Re-exported from the wire schemas rather than redeclared, so a component's
+// props and the validator that admits the data cannot drift apart.
 import type { z } from 'zod';
 
 import type { gateStateSchema, zoneStateSchema } from '../schemas/api';

@@ -1,13 +1,6 @@
-/**
- * @module engine/situation
- *
- * Responsibility: turn a raw Snapshot into the authoritative SituationReport.
- *
- * This is the deterministic pre-pass that everything else depends on. The UI
- * renders it, the AI is handed it as ground truth, and the fallbacks template
- * from it. It is a pure function of its inputs: same snapshot in, same report
- * out, no clock, no randomness, no I/O.
- */
+// Turns a raw Snapshot into the authoritative SituationReport: the deterministic
+// pre-pass everything else depends on (UI, AI ground truth, fallbacks). A pure
+// function of its inputs — same snapshot in, same report out, no clock, no I/O.
 import {
   DENSITY_BANDS,
   ETA_HORIZON_MIN,
@@ -23,19 +16,14 @@ import {
 } from './thresholds';
 import type { GateState, Risk, RiskLevel, Snapshot, SituationReport, ZoneState } from './types';
 
-/** Rounds to one decimal place, avoiding float noise in rendered output. */
+// Rounds to one decimal place, avoiding float noise in rendered output.
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
 /**
- * Formats a headcount for human reading.
- *
- * Thousands separators matter here: an operator scanning a briefing under
- * pressure reads "6,611" instantly and has to stop and count digits on "6611".
- *
- * @param value - A count of people.
- * @returns The count with thousands separators.
+ * Formats a headcount with thousands separators. An operator scanning a briefing
+ * under pressure reads "6,611" instantly but has to count digits on "6611".
  */
 export function formatCount(value: number): string {
   return Math.round(value).toLocaleString('en-US');
@@ -43,10 +31,7 @@ export function formatCount(value: number): string {
 
 /**
  * Projects minutes until a zone reaches critical density at its current rate.
- *
- * @param zone - The zone to project.
- * @returns Minutes to critical, or undefined when flat, improving, already
- *   critical, or beyond the useful planning horizon.
+ * Undefined when flat, improving, already critical, or beyond the planning horizon.
  */
 export function etaToCriticalMin(zone: ZoneState): number | undefined {
   if (zone.netFlowPerMin <= 0) return undefined;
@@ -61,13 +46,7 @@ export function etaToCriticalMin(zone: ZoneState): number | undefined {
   return minutes > ETA_HORIZON_MIN ? undefined : Math.max(1, Math.round(minutes));
 }
 
-/**
- * Builds the risk entry for a zone, or null when the zone is unremarkable.
- *
- * @param zone - The zone to assess.
- * @param heatStress - Whether ambient conditions warrant escalation.
- * @returns A Risk, or null if the zone is at a normal density.
- */
+// Builds the risk entry for a zone, or null when its density is normal.
 function assessZone(zone: ZoneState, heatStress: boolean): Risk | null {
   const base = classifyDensity(zone.densityPct);
   if (base === 'normal') return null;
@@ -99,12 +78,7 @@ function assessZone(zone: ZoneState, heatStress: boolean): Risk | null {
   };
 }
 
-/**
- * Builds the risk entry for a gate, or null when the gate is coping.
- *
- * @param gate - The gate to assess.
- * @returns A Risk, or null if utilization and queue are both normal.
- */
+// Builds the risk entry for a gate, or null when utilization and queue are both normal.
 function assessGate(gate: GateState): Risk | null {
   const utilLevel = classifyGateUtilization(gate.utilizationPct);
   const queueLevel: RiskLevel = gate.queueLen >= GATE_QUEUE_CRITICAL ? 'critical' : 'normal';
@@ -134,12 +108,7 @@ function assessGate(gate: GateState): Risk | null {
   };
 }
 
-/**
- * Builds risk entries for degraded transit lines.
- *
- * @param snapshot - The snapshot to read transit state from.
- * @returns Zero or more transit risks.
- */
+// Builds risk entries for degraded transit lines.
 function assessTransit(snapshot: Snapshot): Risk[] {
   return snapshot.transit
     .filter((line) => line.status !== 'ok')
@@ -178,10 +147,8 @@ function assessTransit(snapshot: Snapshot): Risk[] {
  * Risks are returned sorted most-urgent first. Ordering is fully deterministic:
  * by score, then by id, so equal-score risks never shuffle between ticks.
  *
- * @param snapshot - The venue state to assess.
- * @param generatedAt - ISO-8601 timestamp to stamp on the report. Passed in
- *   rather than read from the clock so the function stays pure and testable.
- * @returns The situation report.
+ * `generatedAt` (ISO-8601) is passed in rather than read from the clock so the
+ * function stays pure and testable.
  */
 export function buildSituationReport(snapshot: Snapshot, generatedAt: string): SituationReport {
   const heatStress = isHeatStress(snapshot.weather.tempC, snapshot.weather.humidityPct);
@@ -199,26 +166,16 @@ export function buildSituationReport(snapshot: Snapshot, generatedAt: string): S
   return { overall, risks, snapshot, generatedAt };
 }
 
-/**
- * Recomputes a zone's density percentage from its occupancy and capacity.
- *
- * @param occupancy - People currently in the zone.
- * @param capacity - Safe capacity in people.
- * @returns Density as a percentage; 0 when capacity is non-positive.
- */
+/** Density as a percentage of safe capacity; 0 when capacity is non-positive. */
 export function densityPct(occupancy: number, capacity: number): number {
   if (capacity <= 0) return 0;
   return (occupancy / capacity) * 100;
 }
 
 /**
- * Recomputes a gate's utilization percentage.
- *
- * @param inflowPerMin - Arrivals per minute.
- * @param throughputPerMin - Processing capacity per minute.
- * @returns Utilization as a percentage; 0 when throughput is non-positive and
- *   there is no inflow, and 999 when a gate is closed but still receiving
- *   arrivals (an unbounded ratio clamped to a renderable sentinel).
+ * Utilization as a percentage. 0 when throughput is non-positive with no inflow;
+ * 999 when a gate is closed but still receiving arrivals (an unbounded ratio
+ * clamped to a renderable sentinel).
  */
 export function utilizationPct(inflowPerMin: number, throughputPerMin: number): number {
   if (throughputPerMin <= 0) return inflowPerMin > 0 ? 999 : 0;

@@ -9,11 +9,6 @@ export const metadata: Metadata = {
   description: 'Live stadium operations: crowd density, gate load, AI briefings and decisions.',
 };
 
-/**
- * The command center page.
- *
- * @returns The dashboard behind an auth guard.
- */
 export default function DashboardPage() {
   return (
     <AuthProvider>

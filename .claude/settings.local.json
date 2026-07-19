@@ -4,7 +4,9 @@
       "PowerShell(npm install -D tailwindcss@4.1.11 @tailwindcss/postcss@4.1.11 --no-audit --no-fund 2>&1)",
       "PowerShell(git init -q)",
       "PowerShell(git add -A)",
-      "Bash(MSYS_NO_PATHCONV=1 node scripts/lh-diag.mjs /dashboard)"
+      "Bash(MSYS_NO_PATHCONV=1 node scripts/lh-diag.mjs /dashboard)",
+      "Bash(grep -vE '^[+-]\\\\s*\\(/\\\\*\\\\*|\\\\*|\\\\*/|//\\)')",
+      "Bash(grep -vE '^[+-]\\\\s*$')"
     ]
   }
 }

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/incidents/IncidentsView
- *
- * Responsibility: wire the incident hooks to the form and the log.
- */
 import { useCallback, useState } from 'react';
 
 import { NavBar } from '@/components/NavBar';
@@ -19,11 +14,7 @@ import { IncidentLog } from './IncidentLog';
 import { ReportForm } from './ReportForm';
 import { TriageResult } from './TriageResult';
 
-/**
- * The multilingual incident copilot.
- *
- * @returns The incidents page body.
- */
+/** The multilingual incident copilot. */
 export function IncidentsView() {
   const { tick } = useSimClock();
   const incidents = useIncidents('normal', tick);

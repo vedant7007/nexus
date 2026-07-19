@@ -1,13 +1,6 @@
-/**
- * @module server/situationService
- *
- * Responsibility: compose the simulator, the engine, and the AI into the
- * answers the dashboard asks for.
- *
- * The ordering in every function here is the same and is the point: simulate,
- * assess deterministically, *then* hand the finished facts to the AI. The AI is
- * always last and always optional.
- */
+// The ordering in every function here is the same and is the point: simulate,
+// assess deterministically, then hand the finished facts to the AI. The AI is
+// always last and always optional.
 import {
   type Recommendation,
   generateBriefing,
@@ -28,12 +21,7 @@ const MAX_AI_RECOMMENDATIONS = 3;
 /** Default scenario when none is requested. */
 export const DEFAULT_SCENARIO: ScenarioId = 'normal';
 
-/**
- * Narrows an untrusted scenario query parameter.
- *
- * @param value - The raw query value.
- * @returns A valid scenario id, defaulting when the value is absent or unknown.
- */
+/** Narrows an untrusted scenario query parameter, defaulting when absent or unknown. */
 export function resolveScenario(value: string | null): ScenarioId {
   return value !== null && isScenarioId(value) ? value : DEFAULT_SCENARIO;
 }
@@ -44,11 +32,6 @@ export function resolveScenario(value: string | null): ScenarioId {
  * The client passes its session start time so the feed advances smoothly; an
  * explicit tick overrides it, which is what makes the demo and the E2E suite
  * able to jump straight to an interesting moment.
- *
- * @param tickParam - Explicit tick, if requested.
- * @param startedAtParam - Session start epoch ms, if provided.
- * @param now - Current epoch ms.
- * @returns The tick to simulate.
  */
 export function resolveTick(
   tickParam: string | null,
@@ -66,14 +49,7 @@ export function resolveTick(
   return 0;
 }
 
-/**
- * Produces the deterministic situation report for a scenario and tick.
- *
- * @param scenario - Scenario to simulate.
- * @param tick - Tick to simulate.
- * @param generatedAt - ISO timestamp to stamp on the report.
- * @returns The report. Contains no AI output.
- */
+/** Produces the deterministic situation report for a scenario and tick. Contains no AI output. */
 export function situationFor(
   scenario: ScenarioId,
   tick: number,
@@ -93,11 +69,8 @@ export interface RecommendationsResult {
  *
  * The action and the impact come from the engine and are identical in both
  * modes. Only the reasoning prose differs, so a rate-limited or failed AI call
- * costs fluency and nothing else.
- *
- * @param report - The deterministic report.
- * @returns Recommendations, most urgent first, and the overall mode. Reports
- *   'rule' if any reasoning fell back, so the UI badge never overclaims.
+ * costs fluency and nothing else. Reports 'rule' if any reasoning fell back, so
+ * the UI badge never overclaims.
  */
 export async function recommendationsFor(
   report: SituationReport,
@@ -110,13 +83,7 @@ export async function recommendationsFor(
   );
 }
 
-/**
- * Builds recommendations without the cache. Extracted so {@link recommendationsFor}
- * can wrap it.
- *
- * @param report - The deterministic report.
- * @returns Recommendations and the overall mode.
- */
+/** Builds recommendations without the cache, so {@link recommendationsFor} can wrap it. */
 async function buildRecommendations(report: SituationReport): Promise<RecommendationsResult> {
   const targets = report.risks.slice(0, MAX_AI_RECOMMENDATIONS);
 
@@ -150,13 +117,7 @@ async function buildRecommendations(report: SituationReport): Promise<Recommenda
   };
 }
 
-/**
- * Produces the AI situational briefing for a report, cached by scenario+level.
- *
- * @param report - The deterministic report.
- * @param scenario - The active scenario, part of the cache key.
- * @returns The briefing and its mode.
- */
+/** Produces the AI situational briefing for a report, cached by scenario+level. */
 export async function briefingFor(
   report: SituationReport,
   scenario: ScenarioId,
@@ -168,13 +129,7 @@ export async function briefingFor(
   );
 }
 
-/**
- * Produces the AI sustainability insight, cached by scenario+level.
- *
- * @param report - The deterministic report (its snapshot drives the insight).
- * @param scenario - The active scenario, part of the cache key.
- * @returns The insight and its mode.
- */
+/** Produces the AI sustainability insight, cached by scenario+level. */
 export async function sustainabilityFor(
   report: SituationReport,
   scenario: ScenarioId,

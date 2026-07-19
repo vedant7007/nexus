@@ -1,15 +1,8 @@
-/**
- * @module ui/status
- *
- * Responsibility: the one place that decides how a risk level looks and reads.
- *
- * Every entry carries a `label` and an `icon` alongside its colours, and the
- * components that consume this render all three. That is deliberate and it is
- * the accessibility guarantee: roughly 1 in 12 men has a colour vision
- * deficiency, and a control room is exactly where "the red one" must never be
- * the only way to know something is wrong. Colour is the fastest signal, never
- * the only one.
- */
+// Every entry carries a `label` and an `icon` alongside its colours, and
+// consumers render all three. This is the accessibility guarantee: roughly 1 in
+// 12 men has a colour vision deficiency, and a control room is where "the red
+// one" must never be the only way to know something is wrong. Colour is the
+// fastest signal, never the only one.
 import type { RiskLevel, Severity } from '../engine/types';
 
 /** How a risk level is presented. */
@@ -77,12 +70,7 @@ const PRESENTATION: Record<RiskLevel, StatusPresentation> = {
   },
 };
 
-/**
- * Resolves how a risk level should be presented.
- *
- * @param level - The risk level.
- * @returns Its label, icon, and colour classes.
- */
+/** Resolves how a risk level should be presented. */
 export function statusOf(level: RiskLevel): StatusPresentation {
   return PRESENTATION[level];
 }
@@ -116,23 +104,12 @@ const SEVERITY_PRESENTATION: Record<Severity, SeverityPresentation> = {
   },
 };
 
-/**
- * Resolves how an incident severity should be presented.
- *
- * @param severity - The severity.
- * @returns Its label, plain-language meaning, and badge classes.
- */
+/** Resolves how an incident severity should be presented. */
 export function severityOf(severity: Severity): SeverityPresentation {
   return SEVERITY_PRESENTATION[severity];
 }
 
-/**
- * Maps a density percentage to the band used for tinting a zone.
- *
- * Mirrors the engine's bands rather than redefining them — the UI must never be
- * a second, quietly divergent opinion about what counts as dangerous.
- *
- * @param densityPct - Density as a percentage of safe capacity.
- * @returns The matching risk level.
- */
+// Maps a density percentage to the band used for tinting a zone. Mirrors the
+// engine's bands rather than redefining them — the UI must never be a second,
+// quietly divergent opinion about what counts as dangerous.
 export { classifyDensity as densityBand } from '../engine/thresholds';

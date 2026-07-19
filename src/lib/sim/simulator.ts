@@ -1,7 +1,5 @@
 /**
- * @module sim/simulator
- *
- * Responsibility: produce realistic venue snapshots for a scenario and tick.
+ * Produces realistic venue snapshots for a scenario and tick.
  *
  * Two decisions shape this module:
  *
@@ -67,11 +65,6 @@ const ARRIVAL_SPREAD = 18;
  * A small integer hash (mulberry32-style finaliser) rather than a PRNG object,
  * because callers need random-*looking* values addressable by coordinate, not a
  * sequence. Same inputs always produce the same output.
- *
- * @param seed - Run seed.
- * @param tick - Tick index.
- * @param subject - Stable per-subject discriminator, e.g. a gate index.
- * @returns A value in [0, 1).
  */
 export function seededNoise(seed: number, tick: number, subject: number): number {
   let h = (seed ^ (tick * 0x9e3779b1) ^ (subject * 0x85ebca6b)) >>> 0;
@@ -81,15 +74,7 @@ export function seededNoise(seed: number, tick: number, subject: number): number
   return h / 0x100000000;
 }
 
-/**
- * Symmetric jitter in [-magnitude, +magnitude] from seeded noise.
- *
- * @param seed - Run seed.
- * @param tick - Tick index.
- * @param subject - Per-subject discriminator.
- * @param magnitude - Maximum absolute deviation.
- * @returns The jitter value.
- */
+// Symmetric jitter in [-magnitude, +magnitude] from seeded noise.
 function jitter(seed: number, tick: number, subject: number, magnitude: number): number {
   return (seededNoise(seed, tick, subject) * 2 - 1) * magnitude;
 }
@@ -101,12 +86,6 @@ function jitter(seed: number, tick: number, subject: number, magnitude: number):
  * spread so the integral is always full attendance. That normalisation is the
  * point: a scenario can shift or compress the curve to model a transit delay
  * without conjuring extra spectators into existence.
- *
- * @param tMinusMin - Minutes until kickoff; negative after kickoff.
- * @param peakShiftMin - Minutes to shift the peak; negative moves it later.
- * @param spreadScale - Multiplier on the curve's spread; below 1 compresses the
- *   same crowd into a narrower, sharper arrival window.
- * @returns People arriving per minute across all gates.
  */
 export function arrivalRatePerMin(tMinusMin: number, peakShiftMin = 0, spreadScale = 1): number {
   const spread = ARRIVAL_SPREAD * spreadScale;
@@ -137,10 +116,7 @@ export interface GateShare {
  *
  * Gates are returned paired with their config rather than as a bare array, so
  * downstream code never has to index two arrays in parallel and hope they align.
- *
- * @param scenario - Active scenario.
- * @returns One entry per gate, in {@link GATES} order, with shares summing to 1
- *   (or all zero in the degenerate case where every gate is closed).
+ * Shares sum to 1 (or all zero in the degenerate case where every gate is closed).
  */
 export function resolveGateShares(scenario: Scenario): GateShare[] {
   const weighted = GATES.map((gate) => ({
@@ -167,14 +143,7 @@ interface GateAccumulator {
   lastAdmitted: number;
 }
 
-/**
- * Integrates gate queues and admissions from tick 0 up to the target tick.
- *
- * @param targetTick - Tick to simulate up to, inclusive.
- * @param scenario - Active scenario.
- * @param seed - Run seed for jitter.
- * @returns One accumulator per gate, in {@link GATES} order.
- */
+// Integrates gate queues and admissions from tick 0 up to targetTick (inclusive).
 function integrateGates(targetTick: number, scenario: Scenario, seed: number): GateAccumulator[] {
   const resolved = resolveGateShares(scenario);
   const acc: GateAccumulator[] = resolved.map(({ gate }) => ({
@@ -226,11 +195,6 @@ function integrateGates(targetTick: number, scenario: Scenario, seed: number): G
  * derived from capacity, not tuned: if 26% of the seats can only be reached on
  * foot from a concourse, 26% of the crowd must walk there. The sum of all zone
  * occupancies therefore equals total admissions, which a test asserts.
- *
- * @param gateAcc - Integrated gate accumulators.
- * @param seed - Run seed for jitter.
- * @param tick - Current tick.
- * @returns Zone states in {@link ZONES} order.
  */
 function buildZones(gateAcc: readonly GateAccumulator[], seed: number, tick: number): ZoneState[] {
   const totalAdmitted = gateAcc.reduce((sum, g) => sum + g.admitted, 0);
@@ -274,12 +238,7 @@ function buildZones(gateAcc: readonly GateAccumulator[], seed: number, tick: num
   });
 }
 
-/**
- * Builds gate states from integrated accumulators.
- *
- * @param gateAcc - Integrated gate accumulators.
- * @returns Gate states in {@link GATES} order.
- */
+// Builds gate states from integrated accumulators.
 function buildGates(gateAcc: readonly GateAccumulator[]): GateState[] {
   return gateAcc.map((acc) => ({
     id: acc.gate.id,
@@ -292,12 +251,7 @@ function buildGates(gateAcc: readonly GateAccumulator[]): GateState[] {
   }));
 }
 
-/**
- * Builds transit line states under a scenario.
- *
- * @param scenario - Active scenario.
- * @returns Transit lines in {@link TRANSIT_LINES} order.
- */
+// Builds transit line states under a scenario.
 function buildTransit(scenario: Scenario): TransitLine[] {
   return TRANSIT_LINES.map((line) => {
     const delayMin = scenario.transitDelays[line.line] ?? 0;
@@ -311,12 +265,10 @@ function buildTransit(scenario: Scenario): TransitLine[] {
 }
 
 /**
- * Produces the venue snapshot for a scenario at a tick.
+ * Produces a self-consistent venue snapshot for a scenario at a tick.
  *
- * @param scenarioId - Scenario to simulate.
- * @param tick - Tick index; clamped to [0, {@link MAX_TICK}].
- * @param seed - Run seed. Fixed by default so demos are reproducible.
- * @returns A self-consistent snapshot of the venue.
+ * `tick` is clamped to [0, MAX_TICK]; `seed` is fixed by default so demos are
+ * reproducible.
  */
 export function simulate(scenarioId: ScenarioId, tick: number, seed = 1337): Snapshot {
   const scenario = getScenario(scenarioId);
@@ -357,13 +309,9 @@ export function simulate(scenarioId: ScenarioId, tick: number, seed = 1337): Sna
  * Derives the current tick from elapsed wall-clock time.
  *
  * Kept separate from {@link simulate} so the simulator itself stays pure: this
- * is the only place the clock enters the simulation.
- *
- * @param startedAtMs - Epoch milliseconds when the session started.
- * @param nowMs - Current epoch milliseconds.
- * @param msPerTick - Real milliseconds per simulated tick. Defaults to 3s, which
- *   compresses the 90-minute window into a ~4.5-minute demo.
- * @returns The tick index, clamped to the simulation window.
+ * is the only place the clock enters the simulation. Returns a tick clamped to
+ * the simulation window. `msPerTick` defaults to 3s, which compresses the
+ * 90-minute window into a ~4.5-minute demo.
  */
 export function tickForElapsed(startedAtMs: number, nowMs: number, msPerTick = 3_000): number {
   const elapsed = Math.max(0, nowMs - startedAtMs);

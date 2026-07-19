@@ -1,19 +1,12 @@
 'use client';
 
-/**
- * @module components/dashboard/ScenarioPicker
- *
- * Responsibility: let an operator put the venue into a named situation.
- *
- * This is the control the whole demo turns on, so it is a Radix Select rather
- * than a styled div: full keyboard operation, correct roles, focus management,
- * and typeahead come from the primitive instead of being reimplemented badly.
- */
+// The control the whole demo turns on, so it is a Radix Select rather than a
+// styled div: full keyboard operation, correct roles, focus management, and
+// typeahead come from the primitive instead of being reimplemented badly.
 import * as Select from '@radix-ui/react-select';
 
 import { SCENARIO_IDS, type ScenarioId, getScenario } from '@/lib/sim/scenarios';
 
-/** Props for {@link ScenarioPicker}. */
 export interface ScenarioPickerProps {
   value: ScenarioId;
   onChange: (value: ScenarioId) => void;
@@ -24,20 +17,12 @@ export interface ScenarioPickerProps {
  *
  * Radix hands back `string`, and the honest way to get a ScenarioId out of it is
  * to check — not to assert with `as` and hope the option list never drifts.
- *
- * @param value - The raw value from the select.
- * @returns The scenario id, or null when it is not one.
  */
 function toScenarioId(value: string): ScenarioId | null {
   return SCENARIO_IDS.find((id) => id === value) ?? null;
 }
 
-/**
- * A keyboard-operable scenario selector.
- *
- * @param props - Current value and change handler.
- * @returns The picker.
- */
+/** A keyboard-operable scenario selector. */
 export function ScenarioPicker({ value, onChange }: ScenarioPickerProps) {
   const handleChange = (next: string): void => {
     const id = toScenarioId(next);

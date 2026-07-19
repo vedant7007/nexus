@@ -8,11 +8,6 @@ export const metadata: Metadata = {
   description: 'Sign in to the NEXUS stadium operations command center.',
 };
 
-/**
- * The sign-in page.
- *
- * @returns The login form.
- */
 export default function LoginPage() {
   return (
     <AuthProvider>

@@ -1,14 +1,6 @@
-/**
- * @module components/ui/Panel
- *
- * Responsibility: the shared frame every dashboard panel sits in, and the
- * loading / empty / error states it can be in.
- *
- * Centralising the states is what makes "no spinner-forever, no blank div" a
- * property of the system rather than a promise each panel has to keep on its
- * own.
- */
-/** Props for {@link Panel}. */
+// Centralising the loading / empty / error states here makes "no
+// spinner-forever, no blank div" a property of the system rather than a promise
+// each panel has to keep on its own.
 export interface PanelProps {
   title: string;
   /** Rendered at the top-right: mode badges, timestamps, controls. */
@@ -19,12 +11,7 @@ export interface PanelProps {
   headingLevel?: 2 | 3;
 }
 
-/**
- * A titled panel.
- *
- * @param props - Title, optional actions, and content.
- * @returns The panel.
- */
+/** A titled panel. */
 export function Panel({ title, actions, children, className = '', headingLevel = 2 }: PanelProps) {
   const Heading = headingLevel === 2 ? 'h2' : 'h3';
 
@@ -46,12 +33,7 @@ export function Panel({ title, actions, children, className = '', headingLevel =
   );
 }
 
-/**
- * Derives a stable DOM id from a panel title.
- *
- * @param title - The panel title.
- * @returns A slug usable as an id.
- */
+/** Derives a stable DOM id from a panel title. */
 function toId(title: string): string {
   return `panel-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
@@ -62,9 +44,6 @@ function toId(title: string): string {
  * Mirrors the shape of the real content rather than spinning, so the layout
  * does not jump when data lands — a spinner that becomes three lines of text is
  * a cumulative layout shift with extra steps.
- *
- * @param props - How many lines to suggest.
- * @returns The skeleton.
  */
 export function PanelSkeleton({ lines = 3 }: { lines?: number }) {
   return (
@@ -80,12 +59,7 @@ export function PanelSkeleton({ lines = 3 }: { lines?: number }) {
   );
 }
 
-/**
- * Error state with a retry affordance.
- *
- * @param props - The message and a retry callback.
- * @returns The error state.
- */
+/** Error state with a retry affordance. */
 export function PanelError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="rounded-lg border border-[var(--color-status-critical)] bg-[var(--color-status-critical-bg)] p-4">
@@ -103,12 +77,7 @@ export function PanelError({ message, onRetry }: { message: string; onRetry?: ()
   );
 }
 
-/**
- * Empty state.
- *
- * @param props - The message to show.
- * @returns The empty state.
- */
+/** Empty state. */
 export function PanelEmpty({ message }: { message: string }) {
   return <p className="py-6 text-center text-sm text-[var(--color-ink-dim)]">{message}</p>;
 }

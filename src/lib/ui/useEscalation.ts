@@ -1,11 +1,7 @@
 'use client';
 
-/**
- * @module ui/useEscalation
- *
- * Responsibility: detect when the overall risk level rises, so the UI can react
- * to an escalation as an event rather than a silent value change.
- */
+// Detects when the overall risk level rises, so the UI can react to an
+// escalation as an event rather than a silent value change.
 import { useEffect, useRef, useState } from 'react';
 
 import type { RiskLevel } from '../engine/types';
@@ -20,9 +16,6 @@ const ORDER: readonly RiskLevel[] = ['normal', 'elevated', 'high', 'critical'];
  * Feeding the token to a component's `key`, or to a className toggle, re-triggers
  * a one-shot CSS animation exactly on escalation — the "control room reacting"
  * cue. A de-escalation is deliberately silent: calm returning is not an alarm.
- *
- * @param level - The current overall level, or null before the first reading.
- * @returns A token that increments on each rise.
  */
 export function useEscalation(level: RiskLevel | null): number {
   const previous = useRef<RiskLevel | null>(null);

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module ui/useDebouncedValue
- *
- * Responsibility: settle a rapidly-changing value before anything reacts to it.
- */
 import { useEffect, useState } from 'react';
 
 /**
@@ -18,10 +13,6 @@ import { useEffect, useState } from 'react';
  * a real escalation holds for many seconds — through with only `delayMs` of lag.
  * The deterministic status pill is undebounced, so the live status is never
  * delayed; only the costlier AI refresh waits for the value to mean something.
- *
- * @param value - The volatile value.
- * @param delayMs - How long it must hold before it is emitted.
- * @returns The settled value.
  */
 export function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [settled, setSettled] = useState(value);

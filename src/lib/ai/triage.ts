@@ -1,31 +1,13 @@
-/**
- * @module ai/triage
- *
- * Responsibility: understand an incident report in any language, and let the
- * engine decide what it means.
- *
- * This module is the clearest expression of the architecture. A volunteer types
- * "hay una persona desmayada en la sección 114" and two very different things
- * have to happen:
- *
- *  - **Understanding it** is a language problem. Detecting Spanish, translating
- *    it, recognising it describes a person rather than a facility, drafting a
- *    protocol — an LLM is genuinely the right tool, and nothing else available
- *    would do it across 30+ languages.
- *
- *  - **Deciding it is a life-safety emergency** is a safety problem. If the
- *    model mistranslates "desmayada", hedges, or returns `facilities`, someone
- *    unconscious waits for a caretaker. So the model is never asked.
- *
- * Hence the split, enforced by the type system rather than by convention:
- * {@link TriageProposal} has no severity field and no team field. There is no
- * shape in which the model *can* express a triage decision. It proposes a type;
- * `engine/severity.classifySeverity` decides severity and routing from the raw
- * text and the translation, and a life-safety keyword overrides the model's
- * proposed type outright.
- *
- * The model cannot talk the engine down, because the engine is not listening.
- */
+// Understand an incident report in any language, then let the engine decide what it
+// means. Understanding it (detect language, translate, categorise, draft a protocol)
+// is a language problem across 30+ languages — an LLM is genuinely the right tool.
+// Deciding it is a life-safety emergency is a safety problem, so the model is never
+// asked: the split is enforced by the type system, not convention. TriageProposal
+// has no severity field and no team field — there is no shape in which the model
+// *can* express a triage decision. engine/severity.classifySeverity decides severity
+// and routing from the raw text and translation, and a life-safety keyword overrides
+// the model's proposed type outright. The model cannot talk the engine down, because
+// the engine is not listening.
 import { z } from 'zod';
 
 import { classifySeverity, escalateForZoneRisk } from '../engine/severity';
@@ -56,7 +38,6 @@ const INCIDENT_TYPES = [
 export const triageProposalSchema = z.object({
   /** BCP-47-ish language name or code the model detected, e.g. "Spanish". */
   detectedLanguage: z.string().min(1).max(40),
-  /** English translation of the report. */
   englishText: z.string().min(1).max(600),
   /** The model's proposed category. The engine may override it. */
   proposedType: z.enum(INCIDENT_TYPES),
@@ -82,12 +63,6 @@ export interface TriageResult {
 /** Longest incident report accepted. Bounds prompt size and cost. */
 export const MAX_REPORT_CHARS = 800;
 
-/**
- * Builds the triage prompt.
- *
- * @param rawText - The incident report, in any language.
- * @returns The full prompt.
- */
 export function triagePrompt(rawText: string): string {
   return `You are the AI incident copilot for a FIFA World Cup stadium control room. Stadium staff and volunteers report incidents to you in any language.
 
@@ -133,13 +108,8 @@ export interface TriageContext {
  * Called on both the AI path and the fallback path with the same inputs, so the
  * severity and routing an operator sees are identical either way. That equality
  * is asserted by tests: if Gemini is down, triage does not get less safe, only
- * less fluent.
- *
- * @param proposedType - The type to categorise under.
- * @param texts - Every text to scan for keywords: the raw report, and the
- *   translation when one exists.
- * @param context - Engine inputs the model is not permitted to supply.
- * @returns The authoritative decision.
+ * less fluent. `texts` is every text to scan for keywords: the raw report, and
+ * the translation when one exists.
  */
 export function decide(
   proposedType: IncidentType,
@@ -150,13 +120,7 @@ export function decide(
   return escalateForZoneRisk(base, context.zoneIsCritical);
 }
 
-/**
- * Triages an incident report: AI for language, engine for safety.
- *
- * @param rawText - The report, in any language.
- * @param context - Engine inputs the model may not supply.
- * @returns The triage result. Never throws; degrades to rule mode.
- */
+/** Triages an incident report: AI for language, engine for safety. Never throws; degrades to rule mode. */
 export async function triageIncident(
   rawText: string,
   context: TriageContext,

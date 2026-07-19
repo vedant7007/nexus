@@ -9,11 +9,6 @@ export const metadata: Metadata = {
   description: 'Report an incident in any language and have it translated, triaged, and routed.',
 };
 
-/**
- * The incidents page.
- *
- * @returns The incident copilot behind an auth guard.
- */
 export default function IncidentsPage() {
   return (
     <AuthProvider>
