@@ -1,22 +1,13 @@
-/**
- * @module schemas/api
- *
- * Responsibility: the wire contract, as runtime-checkable schemas.
- *
- * These are the single source of truth for what crosses the network. The client
- * parses responses with them, which is what lets the UI be typed without a
- * single `any` or `as`: the types below are *inferred from* the schemas, so a
- * type and its validator cannot drift apart.
- */
+// The wire contract as runtime-checkable schemas — the single source of truth for
+// what crosses the network. The types below are *inferred from* these schemas, so a
+// type and its validator cannot drift apart.
 import { z } from 'zod';
 
 /** Risk levels, mirroring `engine/types`. */
 export const riskLevelSchema = z.enum(['normal', 'elevated', 'high', 'critical']);
 
-/** Incident severities. */
 export const severitySchema = z.enum(['SEV1', 'SEV2', 'SEV3']);
 
-/** Incident types. */
 export const incidentTypeSchema = z.enum([
   'medical',
   'crowd',
@@ -26,7 +17,6 @@ export const incidentTypeSchema = z.enum([
   'transport',
 ]);
 
-/** Incident lifecycle states. */
 export const incidentStatusSchema = z.enum(['open', 'acknowledged', 'resolved']);
 
 /** Whether a response came from the model or the deterministic fallback. */
@@ -146,19 +136,12 @@ export const triagePreviewSchema = z.object({
   mode: aiModeSchema,
 });
 
-/** A live venue snapshot. */
 export type SnapshotDto = z.infer<typeof snapshotSchema>;
-/** The deterministic situation report. */
 export type SituationReportDto = z.infer<typeof situationReportSchema>;
-/** An AI or templated briefing. */
 export type BriefingDto = z.infer<typeof briefingResponseSchema>;
-/** A single decision recommendation. */
 export type RecommendationDto = z.infer<typeof recommendationSchema>;
-/** Ranked recommendations plus their mode. */
 export type RecommendationsDto = z.infer<typeof recommendationsResponseSchema>;
-/** A logged incident. */
 export type IncidentDto = z.infer<typeof incidentSchema>;
 /** A triage preview, before the incident is committed. */
 export type TriagePreviewDto = z.infer<typeof triagePreviewSchema>;
-/** Whether a response came from the model or the fallback. */
 export type AiModeDto = z.infer<typeof aiModeSchema>;

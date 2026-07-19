@@ -1,7 +1,5 @@
 /**
- * @module engine/severity
- *
- * Responsibility: decide incident severity and routing by rule, never by model.
+ * Decides incident severity and routing by rule, never by model.
  *
  * This module is the safety interlock of the whole product. An LLM *proposes* an
  * incident type; this module *decides* the severity and the responding team. The
@@ -118,24 +116,12 @@ const TYPE_TEAM: Record<IncidentType, string> = {
 /** Severity ordering, most severe first. */
 const SEVERITY_RANK: Record<Severity, number> = { SEV1: 3, SEV2: 2, SEV3: 1 };
 
-/**
- * Returns the more severe of two severities.
- *
- * @param a - First severity.
- * @param b - Second severity.
- * @returns Whichever ranks higher.
- */
+/** Returns the more severe of two severities. */
 export function maxSeverity(a: Severity, b: Severity): Severity {
   return SEVERITY_RANK[a] >= SEVERITY_RANK[b] ? a : b;
 }
 
-/**
- * Finds which life-safety keywords appear in the given text.
- *
- * @param text - Text to scan; case-insensitive.
- * @param keywords - Keyword list to match against.
- * @returns Every keyword found, in list order.
- */
+/** Finds which keywords appear in the text (case-insensitive), in list order. */
 export function matchKeywords(text: string, keywords: readonly string[]): string[] {
   const haystack = text.toLowerCase();
   return keywords.filter((keyword) => haystack.includes(keyword));
@@ -149,10 +135,8 @@ export function matchKeywords(text: string, keywords: readonly string[]): string
  * demand. A medical report containing "unconscious" returns SEV1 even if the
  * model proposed `facilities`.
  *
- * @param proposedType - Incident type, possibly LLM-proposed.
- * @param texts - Every text to scan for keywords (raw report and any translation).
- * @param nearestFirstAidZoneId - Id of the closest first-aid point to the incident.
- * @returns The authoritative triage decision, including the rule that fired.
+ * `texts` should include both the raw report and any translation, so an
+ * untranslated report still trips the keyword interlock.
  */
 export function classifySeverity(
   proposedType: IncidentType,
@@ -192,10 +176,6 @@ export function classifySeverity(
  *
  * A minor report inside a zone under crowd pressure is not minor: it is a
  * potential trigger for a much larger event.
- *
- * @param decision - The decision from {@link classifySeverity}.
- * @param zoneIsCritical - Whether the incident's zone is at critical density.
- * @returns The decision, escalated if warranted.
  */
 export function escalateForZoneRisk(
   decision: TriageDecision,

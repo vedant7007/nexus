@@ -86,7 +86,6 @@ export function LandingNav() {
           : 'border-b border-transparent'
       }`}
     >
-      {/* Scroll-progress rail. */}
       <div
         aria-hidden="true"
         className="h-0.5 origin-left bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-status-normal)]"

@@ -9,8 +9,6 @@ import { resolveScenario, resolveTick } from '@/lib/server/situationService';
 import { simulate } from '@/lib/sim/simulator';
 
 /**
- * What a client may submit.
- *
  * Note what is absent: severity, team, and routing. They are not optional here
  * — they are unrepresentable. The server derives them from the engine, so a
  * malicious or buggy client cannot under-triage its own report.

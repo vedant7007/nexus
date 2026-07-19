@@ -1,33 +1,19 @@
-/**
- * @module engine/thresholds
- *
- * Responsibility: every safety constant in the system, in one auditable place.
- *
- * These numbers are the reason NEXUS can be trusted. They are fixed, reviewed,
- * and cited — never inferred, never model-generated, never tuned at runtime.
- * The /methodology page renders this module's values and sources directly so an
- * operator can audit exactly what the system considers dangerous.
- *
- * Sourcing: bands follow established crowd-density guidance (UK SGSA Green
- * Guide; Fruin Level-of-Service). ~4 people/m² is the widely used onset of
- * high-risk crowd pressure, which maps to the top of our 'high' band; safe
- * zone capacities are set so that 100% density corresponds to that limit.
- */
+// Every safety constant in one auditable place: fixed, reviewed, and cited,
+// never inferred or model-generated. The /methodology page renders these values
+// and sources directly.
+//
+// Sourcing: bands follow established crowd-density guidance (UK SGSA Green
+// Guide; Fruin Level-of-Service). ~4 people/m² is the widely used onset of
+// high-risk crowd pressure, which maps to the top of our 'high' band; safe
+// zone capacities are set so that 100% density corresponds to that limit.
 import type { RiskLevel } from './types';
 
-/**
- * Crowd density bands as a percentage of *safe* capacity (not fire-code max).
- *
- * A zone at 100% is at its safe design limit, which corresponds to roughly
- * 4 people/m² — the point at which involuntary crowd contact begins and
- * pressure waves become possible.
- */
+// Bands as a percentage of *safe* capacity (not fire-code max). 100% is the
+// safe design limit (~4 people/m²), where involuntary crowd contact begins.
 export const DENSITY_BANDS = {
-  /** Below this, the zone is comfortable. */
   elevated: 70,
-  /** Above this, monitor actively; movement becomes constrained. */
   high: 85,
-  /** Above this, intervene immediately; approaching unsafe pressure. */
+  /** Above this, approaching unsafe pressure; intervene immediately. */
   critical: 95,
 } as const;
 
@@ -64,15 +50,8 @@ const LEVEL_SCORE: Record<RiskLevel, number> = {
   critical: 100,
 };
 
-/** Ordering of risk levels from calm to emergency. */
 const LEVEL_ORDER: readonly RiskLevel[] = ['normal', 'elevated', 'high', 'critical'];
 
-/**
- * Classifies a zone density percentage into a risk band.
- *
- * @param densityPct - Occupancy as a percentage of safe capacity.
- * @returns The band this density falls into.
- */
 export function classifyDensity(densityPct: number): RiskLevel {
   if (densityPct >= DENSITY_BANDS.critical) return 'critical';
   if (densityPct >= DENSITY_BANDS.high) return 'high';
@@ -80,12 +59,6 @@ export function classifyDensity(densityPct: number): RiskLevel {
   return 'normal';
 }
 
-/**
- * Classifies a gate's utilization into a risk band.
- *
- * @param utilizationPct - Inflow as a percentage of throughput.
- * @returns The band this utilization falls into.
- */
 export function classifyGateUtilization(utilizationPct: number): RiskLevel {
   if (utilizationPct >= GATE_UTILIZATION_BANDS.critical) return 'critical';
   if (utilizationPct >= GATE_UTILIZATION_BANDS.high) return 'high';
@@ -93,23 +66,12 @@ export function classifyGateUtilization(utilizationPct: number): RiskLevel {
   return 'normal';
 }
 
-/**
- * Returns the more severe of two risk levels.
- *
- * @param a - First level.
- * @param b - Second level.
- * @returns Whichever level ranks higher.
- */
+/** Returns the more severe of two risk levels. */
 export function maxRiskLevel(a: RiskLevel, b: RiskLevel): RiskLevel {
   return LEVEL_ORDER.indexOf(a) >= LEVEL_ORDER.indexOf(b) ? a : b;
 }
 
-/**
- * Raises a risk level by one band, saturating at 'critical'.
- *
- * @param level - The level to escalate.
- * @returns The next band up, or 'critical' if already there.
- */
+/** Raises a risk level by one band, saturating at 'critical'. */
 export function escalate(level: RiskLevel): RiskLevel {
   const next = LEVEL_ORDER[Math.min(LEVEL_ORDER.indexOf(level) + 1, LEVEL_ORDER.length - 1)];
   // LEVEL_ORDER is a non-empty constant and the index is clamped in range, so
@@ -117,25 +79,15 @@ export function escalate(level: RiskLevel): RiskLevel {
   return next ?? 'critical';
 }
 
-/**
- * Maps a risk level to its numeric ranking weight.
- *
- * @param level - The level to weight.
- * @returns A score where higher means more urgent.
- */
 export function levelScore(level: RiskLevel): number {
   return LEVEL_SCORE[level];
 }
 
 /**
- * Reports whether conditions constitute heat stress.
+ * Reports whether conditions constitute heat stress (crowd risk should escalate).
  *
  * Both temperature and humidity must be elevated: dry heat is far better
  * tolerated by a standing crowd than the same temperature when humid.
- *
- * @param tempC - Air temperature in °C.
- * @param humidityPct - Relative humidity, 0–100.
- * @returns True when the crowd risk band should be escalated.
  */
 export function isHeatStress(tempC: number, humidityPct: number): boolean {
   return tempC >= HEAT_STRESS_TEMP_C && humidityPct >= HEAT_STRESS_HUMIDITY_PCT;

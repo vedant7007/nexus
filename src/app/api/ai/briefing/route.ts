@@ -13,11 +13,9 @@ import { isScenarioId } from '@/lib/sim/scenarios';
 const bodySchema = z.object({
   scenario: z.string().refine(isScenarioId, 'Unknown scenario.'),
   tick: z.number().int().min(0).max(200),
-  /** Request the sustainability insight instead of the situational briefing. */
   kind: z.enum(['situation', 'sustainability']).default('situation'),
 });
 
-/** Response shape for both briefing kinds. */
 interface BriefingResponse {
   text: string;
   mode: 'ai' | 'rule';

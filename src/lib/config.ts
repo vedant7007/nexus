@@ -1,16 +1,7 @@
-/**
- * @module config
- *
- * Responsibility: the single, validated gateway to process environment.
- *
- * No other module reads `process.env`. Values are parsed through Zod so a
- * misconfigured deployment fails loudly at the boundary rather than surfacing
- * as an `undefined` deep inside a request handler.
- *
- * Server and client config are deliberately separated: `serverConfig()` throws
- * if called from the browser, which makes leaking a secret into the client
- * bundle a build/runtime error rather than a silent security hole.
- */
+// The single validated gateway to process.env — no other module reads it. Zod
+// parsing fails a misconfigured deploy at the boundary, not deep in a handler.
+// serverConfig() throws in the browser, so leaking a secret into the client
+// bundle becomes a build/runtime error rather than a silent security hole.
 import { z } from 'zod';
 
 /** Gemini model id. `gemini-1.5-flash` is retired and 404s; 2.5-flash is current. */
@@ -75,20 +66,13 @@ const clientSchema = z.object({
   appId: z.string().min(1).optional(),
 });
 
-/** Validated server-only configuration. */
 export type ServerConfig = z.infer<typeof serverSchema>;
 
-/** Validated Firebase web-SDK configuration (safe to ship to the browser). */
+/** Firebase web-SDK config — safe to ship to the browser. */
 export type ClientConfig = z.infer<typeof clientSchema>;
 
 let cachedServer: ServerConfig | null = null;
 
-/**
- * Returns validated server configuration.
- *
- * @returns The parsed server environment.
- * @throws {Error} If called in a browser context, or if the environment fails validation.
- */
 export function serverConfig(): ServerConfig {
   if (typeof window !== 'undefined') {
     throw new Error('serverConfig() must never be called from the browser');
@@ -105,16 +89,9 @@ export function serverConfig(): ServerConfig {
   return cachedServer;
 }
 
-/**
- * Returns the Firebase web configuration.
- *
- * These values are public by design (Firebase security rests on Auth + rules,
- * not on hiding the web API key). They are referenced as full literal
- * `process.env.NEXT_PUBLIC_*` expressions because Next.js inlines them at build
- * time only when written this way.
- *
- * @returns The parsed client config; fields are undefined when unconfigured.
- */
+// These values are public by design (Firebase security rests on Auth + rules, not
+// on hiding the web API key). Each is a full literal `process.env.NEXT_PUBLIC_*`
+// expression because Next.js inlines them at build time only when written this way.
 export function clientConfig(): ClientConfig {
   return clientSchema.parse({
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -126,26 +103,14 @@ export function clientConfig(): ClientConfig {
   });
 }
 
-/**
- * Reports whether Firebase Auth is fully configured.
- *
- * @returns True when every required web-config field is present.
- */
 export function isFirebaseConfigured(): boolean {
   const c = clientConfig();
   return Boolean(c.apiKey && c.authDomain && c.projectId && c.appId);
 }
 
-/**
- * Reports whether live Gemini calls are possible.
- *
- * Vertex AI needs a project to bill and authenticate against; credentials
- * themselves come from ADC at call time (the Cloud Run service account), so a
- * project id is the one thing that must be configured up front. Without it, or
- * without runtime credentials, every AI feature degrades to rule-based mode.
- *
- * @returns True when a GCP project is configured; false means rule-based mode.
- */
+// Vertex AI needs a project to bill and authenticate against; credentials
+// themselves come from ADC at call time, so the project id is the one thing that
+// must be configured up front. Without it, every AI feature degrades to rule mode.
 export function isAiConfigured(): boolean {
   return Boolean(serverConfig().FIREBASE_PROJECT_ID);
 }

@@ -1,12 +1,8 @@
-/**
- * @module components/ui/StatusPill
- *
- * Responsibility: render a risk level. Colour, icon, and words — always all three.
- */
+// Renders a risk level with colour, icon, and words — always all three, so the
+// state is never conveyed by colour alone.
 import type { RiskLevel } from '@/lib/engine/types';
 import { statusOf } from '@/lib/ui/status';
 
-/** Props for {@link StatusPill}. */
 export interface StatusPillProps {
   level: RiskLevel;
   /** Larger treatment for the dashboard's hero status. */
@@ -26,9 +22,6 @@ const SIZE_CLASS: Record<'sm' | 'lg', string> = {
  * The icon is `aria-hidden` because the adjacent text already carries the
  * meaning — announcing "black circle Critical" would be noise. Sighted users
  * get a redundant non-colour cue; screen reader users get the word.
- *
- * @param props - Level, size, and optional prefix.
- * @returns The pill.
  */
 export function StatusPill({ level, size = 'sm', prefix }: StatusPillProps) {
   const status = statusOf(level);

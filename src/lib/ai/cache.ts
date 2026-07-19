@@ -1,26 +1,10 @@
-/**
- * @module ai/cache
- *
- * Responsibility: reuse a real AI response when the same situation recurs.
- *
- * The simulator is deterministic and situations repeat constantly — a dashboard
- * polls the same `(scenario, level)` every cadence, and a second operator on the
- * same scenario sees the identical picture. Regenerating an AI briefing for each
- * of those is wasted latency and, on a metered key, wasted quota. This caches
- * the *successful* AI output for a short window so the first request pays for it
- * and the rest are instant.
- *
- * Two invariants keep it honest:
- *
- *  - **Only successful AI results are cached.** A fallback is never stored, so
- *    the cache can never make a rule-mode answer masquerade as `mode: 'ai'`, and
- *    a transient outage does not get pinned for the whole TTL.
- *  - **The key carries everything that changes the answer** (scenario, risk
- *    level, kind, or the incident text). Different situations never collide.
- *
- * In-process and per-instance, like the rate limiter — a pragmatic fit for this
- * deployment, and the obvious seam to swap for a shared store later.
- */
+// Reuse a real AI response when the same situation recurs. The simulator is
+// deterministic and situations repeat, so regenerating is wasted latency and quota.
+// Two invariants keep it honest: only *successful* AI results are cached (a fallback
+// is never stored, so a rule-mode answer can't masquerade as mode:'ai' and a
+// transient outage isn't pinned for the whole TTL), and the key carries everything
+// that changes the answer, so different situations never collide. In-process and
+// per-instance, like the rate limiter — the obvious seam to swap for a shared store.
 
 /** Default lifetime of a cached AI response. */
 export const AI_CACHE_TTL_MS = 5 * 60_000;
@@ -39,14 +23,8 @@ const store = new Map<string, Entry<unknown>>();
  * Returns a cached AI result, or computes and caches a fresh one.
  *
  * The computed value is stored only when `shouldCache` accepts it — used to
- * cache `mode: 'ai'` results but never fallbacks.
- *
- * @param key - Cache key; must capture every input that changes the output.
- * @param compute - Produces the value on a miss.
- * @param shouldCache - Predicate deciding whether a computed value is cacheable.
- * @param now - Current epoch ms. Injected for tests.
- * @param ttlMs - Entry lifetime.
- * @returns The cached or freshly computed value.
+ * cache `mode: 'ai'` results but never fallbacks. The key must capture every
+ * input that changes the output.
  */
 export async function cachedAi<T>(
   key: string,
@@ -69,12 +47,8 @@ export async function cachedAi<T>(
   return value;
 }
 
-/**
- * Drops expired entries, then — if still at capacity — the oldest, so an
- * open-ended stream of incident texts cannot grow the map without bound.
- *
- * @param now - Current epoch ms.
- */
+// Drops expired entries, then — if still at capacity — the oldest, so an
+// open-ended stream of incident texts cannot grow the map without bound.
 function sweep(now: number): void {
   for (const [key, entry] of store) {
     if (entry.expiresAt <= now) store.delete(key);

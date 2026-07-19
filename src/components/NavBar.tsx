@@ -1,14 +1,8 @@
 'use client';
 
-/**
- * @module components/NavBar
- *
- * Responsibility: move between the three operator surfaces.
- */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-/** The app's primary destinations. */
 const LINKS: readonly { href: string; label: string }[] = [
   { href: '/dashboard', label: 'Command Center' },
   { href: '/incidents', label: 'Incidents' },
@@ -20,8 +14,6 @@ const LINKS: readonly { href: string; label: string }[] = [
  *
  * `aria-current="page"` marks the active link for screen readers; the underline
  * and colour are the sighted equivalent, so the state is never colour-only.
- *
- * @returns The navigation bar.
  */
 export function NavBar() {
   const pathname = usePathname();

@@ -15,11 +15,6 @@ export const metadata: Metadata = {
     'How NEXUS decides what is dangerous: the density thresholds and their source, the severity rules, and why the AI has no shape in which to express a severity.',
 };
 
-/**
- * The methodology and trust page.
- *
- * @returns The page.
- */
 export default function MethodologyPage() {
   return (
     <>

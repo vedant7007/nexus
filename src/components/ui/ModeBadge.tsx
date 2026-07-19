@@ -1,19 +1,9 @@
-/**
- * @module components/ui/ModeBadge
- *
- * Responsibility: say plainly whether a panel's words came from the model or
- * from the rules.
- *
- * This badge is a feature, not a disclaimer. An operator deciding whether to act
- * on a paragraph deserves to know what wrote it, and "rule-based" is a
- * statement of provenance rather than an apology — the numbers are identical
- * either way, because the engine computed them in both cases. It is also the
- * fastest way to show that the command center keeps working with the AI
- * switched off entirely.
- */
+// This badge is provenance, not a disclaimer: "rule-based" means the prose was
+// written without AI, but the numbers are identical either way because the
+// engine computed them in both cases. It also shows the command center keeps
+// working with the AI switched off entirely.
 import type { AiModeDto } from '@/lib/schemas/api';
 
-/** Props for {@link ModeBadge}. */
 export interface ModeBadgeProps {
   mode: AiModeDto;
 }
@@ -34,12 +24,7 @@ const COPY: Record<AiModeDto, { label: string; title: string; className: string 
   },
 };
 
-/**
- * A badge naming the source of a panel's text.
- *
- * @param props - The mode to display.
- * @returns The badge.
- */
+/** A badge naming the source of a panel's text. */
 export function ModeBadge({ mode }: ModeBadgeProps) {
   const copy = COPY[mode];
 

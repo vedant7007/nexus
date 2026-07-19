@@ -6,12 +6,6 @@ import { useEffect, useRef, useState } from 'react';
  * Counts up to `value` the first time it scrolls into view. The number is
  * always rendered (SSR shows the final value), so it is correct with no JS and
  * for reduced-motion users; the animation is pure polish layered on top.
- *
- * @param value - The target number.
- * @param durationMs - Animation length.
- * @param decimals - Fixed decimal places (for values like 2.1s).
- * @param prefix - Text before the number (e.g. "≥").
- * @param suffix - Text after the number (e.g. "%", "s", "+").
  */
 export function CountUp({
   value,

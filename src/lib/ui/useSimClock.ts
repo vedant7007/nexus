@@ -1,15 +1,8 @@
 'use client';
 
-/**
- * @module ui/useSimClock
- *
- * Responsibility: advance the simulation tick as real time passes.
- *
- * The only clock in the UI. Everything that needs "now" reads this tick, so the
- * snapshot, the briefing, and the incident form are all describing the same
- * instant — panels driving their own timers would drift apart and show an
- * operator two different stadiums at once.
- */
+// The only clock in the UI. Everything that needs "now" reads this tick, so the
+// snapshot, the briefing, and the incident form describe the same instant —
+// panels driving their own timers would drift and show two different stadiums.
 import { useEffect, useState } from 'react';
 
 import { MAX_TICK, tickForElapsed } from '../sim/simulator';
@@ -25,11 +18,7 @@ export interface SimClock {
   restart: () => void;
 }
 
-/**
- * Advances the simulation tick in real time.
- *
- * @returns The current tick and a restart control.
- */
+/** Advances the simulation tick in real time. */
 export function useSimClock(): SimClock {
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [tick, setTick] = useState(DEMO_START_TICK);

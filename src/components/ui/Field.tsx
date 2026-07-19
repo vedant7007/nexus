@@ -1,29 +1,17 @@
 'use client';
 
-/**
- * @module components/ui/Field
- *
- * Responsibility: a labelled form control that is accessible by construction.
- *
- * Every field in the app goes through here, so the label/control association,
- * the hint wiring, and the error announcement cannot be forgotten on one form
- * and remembered on another.
- */
+// Every field in the app goes through here, so the label/control association,
+// the hint wiring, and the error announcement cannot be forgotten on one form
+// and remembered on another.
 import { useId } from 'react';
 
-/** Props shared by every field. */
 interface FieldShellProps {
   label: string;
   hint?: string;
   children: (ids: { controlId: string; describedBy: string | undefined }) => React.ReactNode;
 }
 
-/**
- * A label, an optional hint, and a control wired to both.
- *
- * @param props - Label, hint, and a render function receiving the ids.
- * @returns The field.
- */
+/** A label, an optional hint, and a control wired to both. */
 function FieldShell({ label, hint, children }: FieldShellProps) {
   const controlId = useId();
   const hintId = useId();
@@ -46,7 +34,6 @@ function FieldShell({ label, hint, children }: FieldShellProps) {
 const CONTROL_CLASS =
   'mt-1.5 w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-raised)] px-3 py-2.5 text-sm text-[var(--color-ink)]';
 
-/** Props for {@link TextField}. */
 export interface TextFieldProps {
   label: string;
   value: string;
@@ -57,12 +44,7 @@ export interface TextFieldProps {
   hint?: string;
 }
 
-/**
- * A single-line text input.
- *
- * @param props - Label, value, change handler, and input attributes.
- * @returns The field.
- */
+/** A single-line text input. */
 export function TextField({
   label,
   value,
@@ -90,7 +72,6 @@ export function TextField({
   );
 }
 
-/** Props for {@link TextAreaField}. */
 export interface TextAreaFieldProps {
   label: string;
   value: string;
@@ -102,12 +83,7 @@ export interface TextAreaFieldProps {
   required?: boolean;
 }
 
-/**
- * A multi-line text input with a live character count.
- *
- * @param props - Label, value, change handler, and textarea attributes.
- * @returns The field.
- */
+/** A multi-line text input with a live character count. */
 export function TextAreaField({
   label,
   value,
@@ -149,7 +125,6 @@ export function TextAreaField({
   );
 }
 
-/** Props for {@link SelectField}. */
 export interface SelectFieldProps {
   label: string;
   value: string;
@@ -163,9 +138,6 @@ export interface SelectFieldProps {
  * Native rather than Radix: it is a plain single-choice list with no custom
  * presentation, and the platform control is already keyboard-operable,
  * screen-reader-correct, and free.
- *
- * @param props - Label, value, change handler, and options.
- * @returns The field.
  */
 export function SelectField({ label, value, onChange, options }: SelectFieldProps) {
   return (
@@ -188,7 +160,6 @@ export function SelectField({ label, value, onChange, options }: SelectFieldProp
   );
 }
 
-/** Props for {@link FormError}. */
 export interface FormErrorProps {
   message: string | null;
 }
@@ -199,9 +170,6 @@ export interface FormErrorProps {
  * The live region wraps the conditional rather than sitting inside it: a region
  * that only mounts when an error appears is not announced at all, because there
  * was nothing there to change.
- *
- * @param props - The message, or null for none.
- * @returns The error region.
  */
 export function FormError({ message }: FormErrorProps) {
   return (

@@ -1,14 +1,8 @@
-/**
- * @module sim/venue
- *
- * Responsibility: the static physical configuration of the demo venue.
- *
- * A fictional ~82,500-seat World Cup stadium: 8 zones, 6 gates, 4 transit lines.
- * Capacities are *safe* capacities, set so that 100% density corresponds to the
- * ~4 people/m² high-risk onset documented in engine/thresholds.
- */
+// Static physical configuration of the demo venue: a fictional ~82,500-seat
+// World Cup stadium (8 zones, 6 gates, 4 transit lines). Capacities are *safe*
+// capacities, set so 100% density corresponds to the ~4 people/m² high-risk
+// onset documented in engine/thresholds.
 
-/** Static definition of a zone. */
 export interface ZoneConfig {
   id: string;
   name: string;
@@ -18,7 +12,6 @@ export interface ZoneConfig {
   firstAidZoneId: string;
 }
 
-/** Static definition of a gate. */
 export interface GateConfig {
   id: string;
   name: string;
@@ -30,14 +23,12 @@ export interface GateConfig {
   feedsZoneId: string;
 }
 
-/** Static definition of a transit line. */
 export interface TransitConfig {
   line: string;
   /** Share of arriving spectators using this line, 0–1. */
   arrivalShare: number;
 }
 
-/** Venue display name. */
 export const VENUE_NAME = 'Meridian Stadium';
 
 /** Total safe capacity across all zones. */
@@ -51,7 +42,6 @@ export const FIRST_AID_POINTS: readonly { id: string; name: string }[] = [
   { id: 'fa-west', name: 'West Medical Centre' },
 ];
 
-/** The eight zones of the venue. */
 export const ZONES: readonly ZoneConfig[] = [
   { id: 'z1', name: 'North Lower', capacity: 12_000, firstAidZoneId: 'fa-north' },
   { id: 'z2', name: 'North Upper', capacity: 9_500, firstAidZoneId: 'fa-north' },
@@ -139,13 +129,8 @@ export const TRANSIT_LINES: readonly TransitConfig[] = [
 const FED_ZONE_IDS: ReadonlySet<string> = new Set(GATES.map((g) => g.feedsZoneId));
 
 /**
- * Reports whether a zone is entered directly through a gate.
- *
- * Zones without their own gate (upper tiers, far stands) fill by internal
- * circulation from the concourses instead.
- *
- * @param zoneId - Zone to test.
- * @returns True when at least one gate feeds this zone.
+ * Reports whether a zone is entered directly through a gate. Zones without their
+ * own gate (upper tiers, far stands) fill by internal circulation instead.
  */
 export function isGateFedZone(zoneId: string): boolean {
   return FED_ZONE_IDS.has(zoneId);
@@ -171,22 +156,14 @@ export const UNFED_CAPACITY: number = VENUE_CAPACITY - FED_CAPACITY;
 export const TRANSIT_SHARE: number = UNFED_CAPACITY / VENUE_CAPACITY;
 
 /**
- * Finds the first-aid point nearest a zone.
- *
- * @param zoneId - Zone to look up.
- * @returns The first-aid point id, or the north post as a safe default when the
- *   zone is unknown — routing a responder to a real post always beats failing.
+ * Finds the first-aid point nearest a zone, or the north post as a safe default
+ * when the zone is unknown — routing a responder to a real post beats failing.
  */
 export function nearestFirstAid(zoneId: string): string {
   return ZONES.find((z) => z.id === zoneId)?.firstAidZoneId ?? 'fa-north';
 }
 
-/**
- * Looks up a zone's display name.
- *
- * @param zoneId - Zone to look up.
- * @returns The zone name, or the id itself when unknown.
- */
+/** Looks up a zone's display name, or the id itself when unknown. */
 export function zoneName(zoneId: string): string {
   return ZONES.find((z) => z.id === zoneId)?.name ?? zoneId;
 }

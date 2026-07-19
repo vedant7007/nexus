@@ -30,22 +30,14 @@ export const viewport: Viewport = {
 };
 
 /**
- * The root layout.
- *
  * Reading `headers()` here is load-bearing, not incidental. The middleware
- * issues a per-request CSP nonce, and a nonce cannot exist in a page that was
- * rendered once at build time — so with static prerendering the browser refused
- * every one of Next's own scripts and the app shipped with no JavaScript at all.
- * Touching `headers()` opts the tree into dynamic rendering, which is what lets
- * Next stamp the nonce onto its script tags.
- *
- * The cost is that no page is statically prerendered. That is the correct trade
- * here: this is an authenticated operations console behind `min-instances=1`, so
- * there is no cold start to amortise and nothing worth caching at the edge —
- * every page shows live state anyway.
- *
- * @param props - Standard children.
- * @returns The document shell.
+ * issues a per-request CSP nonce, and a nonce cannot exist in a statically
+ * prerendered page — so the browser would refuse every one of Next's own
+ * scripts and the app would ship with no JavaScript. Touching `headers()` opts
+ * the tree into dynamic rendering, which is what lets Next stamp the nonce onto
+ * its script tags. Nothing is worth caching anyway: this is an authenticated
+ * console behind `min-instances=1`, so there is no cold start to amortise and
+ * every page shows live state.
  */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // The value is unused; the read is what forces dynamic rendering.

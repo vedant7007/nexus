@@ -1,15 +1,9 @@
 'use client';
 
-/**
- * @module components/dashboard/SustainabilityStrip
- *
- * Responsibility: render resource metrics and the AI insight about them.
- */
 import { ModeBadge } from '@/components/ui/ModeBadge';
 import { Panel } from '@/components/ui/Panel';
 import type { BriefingDto, SnapshotDto } from '@/lib/schemas/api';
 
-/** Props for {@link SustainabilityStrip}. */
 export interface SustainabilityStripProps {
   snapshot: SnapshotDto | null;
   insight: BriefingDto | null;
@@ -42,9 +36,6 @@ const METRIC_DEFS: readonly { label: string; detail: string }[] = [
  *
  * Presentation only: the engine's `sustainabilitySummary` owns the analysis and
  * the AI insight already reports it. This just formats four numbers.
- *
- * @param snapshot - The venue snapshot, or null before it arrives.
- * @returns The four metrics to render.
  */
 function toMetrics(snapshot: SnapshotDto | null): Metric[] {
   const r = snapshot?.resources;
@@ -76,9 +67,6 @@ function toMetrics(snapshot: SnapshotDto | null): Metric[] {
  * read faster as numbers than as bars, and it costs no chart library on the
  * critical path — the accessible "data table alternative" a chart would need is
  * simply the primary presentation here.
- *
- * @param props - Snapshot, insight, and loading state.
- * @returns The strip.
  */
 export function SustainabilityStrip({ snapshot, insight }: SustainabilityStripProps) {
   return (

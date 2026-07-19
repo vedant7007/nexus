@@ -1,19 +1,8 @@
-/**
- * @module server/repository
- *
- * Responsibility: define persistence as an interface, and implement it for
- * Firestore.
- *
- * The interface comes first and is the real contract — services depend on
- * `IncidentRepository`, never on Firestore. That is dependency inversion for a
- * concrete payoff, not architecture cosplay: route and service tests run against
- * an in-memory double with no emulator, no network, and no credentials, while
- * production runs against Firestore through the same surface.
- *
- * The test double lives beside the real implementation deliberately. It is part
- * of the contract — if a method is added here, both implementations must satisfy
- * it, and the shared conformance suite proves they behave the same.
- */
+// The interface is the real contract — services depend on `IncidentRepository`,
+// never on Firestore — so route and service tests run against an in-memory
+// double with no emulator, network, or credentials. The double lives beside the
+// real implementation on purpose: a shared conformance suite proves they behave
+// the same, so a method added here must be satisfied by both.
 import type { IncidentStatus, IncidentType, Severity } from '../engine/types';
 
 /** A logged incident. */
@@ -51,37 +40,16 @@ export type NewIncident = Omit<Incident, 'id'>;
 
 /** Persistence contract for incidents. */
 export interface IncidentRepository {
-  /**
-   * Persists a new incident.
-   *
-   * @param incident - The incident to store.
-   * @returns The stored incident, with its assigned id.
-   */
+  /** Returns the stored incident, with its assigned id. */
   create(incident: NewIncident): Promise<Incident>;
 
-  /**
-   * Lists incidents, most severe first, then most recent.
-   *
-   * @param limit - Maximum incidents to return.
-   * @returns The incidents.
-   */
+  /** Lists incidents, most severe first, then most recent. */
   list(limit: number): Promise<Incident[]>;
 
-  /**
-   * Finds one incident.
-   *
-   * @param id - Incident id.
-   * @returns The incident, or null when it does not exist.
-   */
+  /** Returns the incident, or null when it does not exist. */
   findById(id: string): Promise<Incident | null>;
 
-  /**
-   * Updates an incident's status.
-   *
-   * @param id - Incident id.
-   * @param status - The new status.
-   * @returns The updated incident, or null when it does not exist.
-   */
+  /** Returns the updated incident, or null when it does not exist. */
   updateStatus(id: string, status: IncidentStatus): Promise<Incident | null>;
 }
 
@@ -91,10 +59,6 @@ const SEVERITY_RANK: Record<Severity, number> = { SEV1: 0, SEV2: 1, SEV3: 2 };
 /**
  * Orders incidents the way a control room reads them: worst first, newest first
  * within a severity. Shared by both implementations so ordering cannot drift.
- *
- * @param a - First incident.
- * @param b - Second incident.
- * @returns Comparator result.
  */
 export function compareIncidents(a: Incident, b: Incident): number {
   return (
@@ -113,7 +77,6 @@ export class InMemoryIncidentRepository implements IncidentRepository {
   private readonly items = new Map<string, Incident>();
   private sequence = 0;
 
-  /** @inheritdoc */
   async create(incident: NewIncident): Promise<Incident> {
     this.sequence += 1;
     const stored: Incident = { ...incident, id: `inc-${this.sequence}` };
@@ -121,17 +84,14 @@ export class InMemoryIncidentRepository implements IncidentRepository {
     return stored;
   }
 
-  /** @inheritdoc */
   async list(limit: number): Promise<Incident[]> {
     return [...this.items.values()].sort(compareIncidents).slice(0, limit);
   }
 
-  /** @inheritdoc */
   async findById(id: string): Promise<Incident | null> {
     return this.items.get(id) ?? null;
   }
 
-  /** @inheritdoc */
   async updateStatus(id: string, status: IncidentStatus): Promise<Incident | null> {
     const existing = this.items.get(id);
     if (existing === undefined) return null;

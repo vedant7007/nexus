@@ -10,16 +10,8 @@ const patchSchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved']),
 });
 
-/**
- * Extracts the incident id from the URL.
- *
- * Read from the path rather than the route's params argument so the handler
- * keeps the plain `(request) => Response` signature that `withRoute` wraps.
- *
- * @param request - The incoming request.
- * @returns The incident id.
- * @throws {AppError} 404 when the path carries no id.
- */
+// Read the id from the path (not the route's params argument) so the handler
+// keeps the plain `(request) => Response` signature that `withRoute` wraps.
 function idFrom(request: Request): string {
   const segments = new URL(request.url).pathname.split('/').filter(Boolean);
   const id = segments[segments.length - 1];

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/incidents/IncidentLog
- *
- * Responsibility: render the incident log and let an operator advance status.
- */
 import { ModeBadge } from '@/components/ui/ModeBadge';
 import { Panel, PanelEmpty, PanelError, PanelSkeleton } from '@/components/ui/Panel';
 import type { IncidentStatus } from '@/lib/engine/types';
@@ -14,7 +9,6 @@ import type { ApiError } from '@/lib/ui/apiClient';
 import { INCIDENT_LOG_PAGE_SIZE } from '@/lib/ui/constants';
 import { severityOf } from '@/lib/ui/status';
 
-/** Props for {@link IncidentLog}. */
 export interface IncidentLogProps {
   incidents: readonly IncidentDto[];
   loading: boolean;
@@ -44,12 +38,7 @@ const STATUS_CLASS: Record<IncidentStatus, string> = {
   resolved: 'text-[var(--color-status-normal-text)]',
 };
 
-/**
- * Formats a timestamp as a wall clock time.
- *
- * @param iso - ISO-8601 timestamp.
- * @returns A local time, or an em dash when unparseable.
- */
+/** Formats a timestamp as a wall clock time, or an em dash when unparseable. */
 function toClock(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
@@ -57,12 +46,7 @@ function toClock(iso: string): string {
     : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-/**
- * One row of the log.
- *
- * @param props - The incident and a status callback.
- * @returns The row.
- */
+/** One row of the log. */
 function IncidentRow({
   incident,
   onStatusChange,
@@ -121,12 +105,7 @@ function IncidentRow({
   );
 }
 
-/**
- * The live incident log, most severe first.
- *
- * @param props - Incidents, states, and callbacks.
- * @returns The log panel.
- */
+/** The live incident log, most severe first. */
 export function IncidentLog({
   incidents,
   loading,

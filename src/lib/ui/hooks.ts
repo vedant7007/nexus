@@ -1,15 +1,8 @@
 'use client';
 
-/**
- * @module ui/hooks
- *
- * Responsibility: every data-fetching concern the command center has.
- *
- * Components import from here and render what they are handed. None of them
- * calls `fetch`, none of them knows a URL, and none of them owns a polling
- * interval — which is what keeps them small, dumb, and testable with plain
- * props rather than a mocked network.
- */
+// Every data-fetching concern the command center has. Components import from
+// here and render what they are handed — none calls `fetch`, knows a URL, or
+// owns a polling interval, which keeps them small and testable with plain props.
 import { useCallback } from 'react';
 
 import type { IncidentStatus } from '../engine/types';
@@ -36,18 +29,12 @@ import { useAuthToken } from './useAuthToken';
 import { useLatest } from './useLatest';
 import { type PolledResource, usePolledResource } from './usePolledResource';
 
-/** Query string for a scenario and tick. */
+// Query string for a scenario and tick.
 function query(scenario: ScenarioId, tick: number): string {
   return `?scenario=${encodeURIComponent(scenario)}&tick=${tick}`;
 }
 
-/**
- * Polls the live venue snapshot.
- *
- * @param scenario - Active scenario.
- * @param tick - Simulation tick to render.
- * @returns The snapshot resource.
- */
+/** Polls the live venue snapshot. */
 export function useSnapshot(scenario: ScenarioId, tick: number): PolledResource<SnapshotDto> {
   const getToken = useAuthToken();
   const fetcher = useCallback(
@@ -60,13 +47,7 @@ export function useSnapshot(scenario: ScenarioId, tick: number): PolledResource<
   return usePolledResource(fetcher, 0);
 }
 
-/**
- * Polls the deterministic situation report.
- *
- * @param scenario - Active scenario.
- * @param tick - Simulation tick to render.
- * @returns The report resource.
- */
+/** Polls the deterministic situation report. */
 export function useSituation(
   scenario: ScenarioId,
   tick: number,
@@ -106,9 +87,6 @@ export interface BriefingOptions {
  * Refreshes far slower than the snapshot because each call costs AI budget.
  * The tick is read at request time rather than being a dependency, so the
  * briefing does not re-fire every time the clock advances.
- *
- * @param options - Scenario, tick, kind, and an optional revalidation key.
- * @returns The briefing resource.
  */
 export function useBriefing(options: BriefingOptions): PolledResource<BriefingDto> {
   const getToken = useAuthToken();
@@ -139,11 +117,8 @@ export function useBriefing(options: BriefingOptions): PolledResource<BriefingDt
 /**
  * Fetches ranked recommendations, refreshing on its own cadence.
  *
- * @param scenario - Active scenario.
- * @param tick - Simulation tick.
- * @param revalidateKey - Changing this forces an immediate refresh; the
- *   dashboard passes the overall risk level so recommendations track escalation.
- * @returns The recommendations resource.
+ * Changing `revalidateKey` forces an immediate refresh; the dashboard passes the
+ * overall risk level so recommendations track escalation.
  */
 export function useRecommendations(
   scenario: ScenarioId,
@@ -179,10 +154,7 @@ export interface IncidentsApi extends PolledResource<{ incidents: IncidentDto[] 
 
 /**
  * Polls the incident log and exposes the operations that change it.
- *
- * @param scenario - Active scenario, used as triage context.
- * @param tick - Simulation tick, used as triage context.
- * @returns The log resource plus report, preview, and status operations.
+ * Scenario and tick are used as triage context.
  */
 export function useIncidents(scenario: ScenarioId, tick: number): IncidentsApi {
   const getToken = useAuthToken();

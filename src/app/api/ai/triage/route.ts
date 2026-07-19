@@ -27,8 +27,6 @@ interface TriagePreview {
 }
 
 /**
- * Triages a report and returns the result without saving it.
- *
  * Lets the incident form show the operator exactly what will be logged — the
  * translation, the rule-decided severity, and which rule fired — before they
  * commit to it.

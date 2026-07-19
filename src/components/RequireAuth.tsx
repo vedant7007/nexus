@@ -1,26 +1,15 @@
 'use client';
 
-/**
- * @module components/RequireAuth
- *
- * Responsibility: keep signed-out users off the operator surfaces.
- *
- * A client-side guard for *navigation only*. It is not the security boundary —
- * every API route independently verifies the ID token server-side, so a user
- * who defeats this guard sees an empty shell and a wall of 401s. Treating a
- * client redirect as protection is how people ship unauthenticated APIs.
- */
+// A client-side guard for *navigation only*, not the security boundary — every
+// API route independently verifies the ID token server-side, so a user who
+// defeats this guard sees an empty shell and a wall of 401s. Treating a client
+// redirect as protection is how people ship unauthenticated APIs.
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { useAuth } from './AuthProvider';
 
-/**
- * Renders children only for a signed-in user.
- *
- * @param props - Standard children.
- * @returns The children, or a loading state while auth resolves.
- */
+/** Renders children only for a signed-in user. */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, configured } = useAuth();
   const router = useRouter();

@@ -1,27 +1,10 @@
-/**
- * @module ai/client
- *
- * Responsibility: the only place that talks to Gemini, and the only place that
- * decides an AI call has failed.
- *
- * Gemini is reached through **Vertex AI** (`aiplatform.googleapis.com`), not the
- * AI-Studio API. Two reasons, one of them hard-won: Vertex bills the project's
- * Cloud Billing account directly (the AI-Studio API in some regions is gated by
- * a separate prepaid balance that has nothing to do with Cloud Billing), and it
- * authenticates with the runtime's own credentials — the Cloud Run service
- * account via Application Default Credentials — so **there is no API key to
- * store, rotate, or leak.**
- *
- * Every AI feature routes through {@link generateJson} or {@link generateText},
- * which guarantee four things the rest of the app relies on absolutely:
- *
- *  1. **A hard timeout.** A control room cannot wait on a hanging model.
- *  2. **No throwing.** Callers get a discriminated result, never an exception —
- *     failure is a value the type system forces the caller to handle.
- *  3. **Schema validation.** Model output is untrusted input, parsed with Zod
- *     before any caller sees it.
- *  4. **Server-only.** Credentials never reach a bundle.
- */
+// The only module that talks to Gemini, and the only one that decides an AI call
+// failed. Gemini is reached through Vertex AI (not the AI-Studio API): Vertex bills
+// Cloud Billing directly, where the AI-Studio API in some regions is gated by a
+// separate prepaid balance, and it authenticates with the runtime's own ADC
+// credentials — so there is no API key to store, rotate, or leak. Every call routes
+// through generateJson/generateText, which guarantee a hard timeout, never throw
+// (failure is a typed value), validate model output with Zod, and stay server-only.
 import { GoogleAuth } from 'google-auth-library';
 import { z } from 'zod';
 
@@ -42,7 +25,6 @@ const GENERATION_CONFIG = {
   thinkingConfig: { thinkingBudget: 0 },
 } as const;
 
-/** OAuth scope for Vertex AI calls. */
 const CLOUD_PLATFORM_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 
 /** Why an AI call did not produce usable output. */
@@ -76,8 +58,6 @@ let cachedAuth: GoogleAuth | null = null;
  * where ADC may not be set up: a `gcloud auth print-access-token` value can be
  * exported to exercise the real path without `gcloud auth application-default
  * login`. Absent both, the caller degrades to rule mode.
- *
- * @returns A bearer token, or null when no credentials are available.
  */
 async function getAccessToken(): Promise<string | null> {
   const override = process.env.GEMINI_ACCESS_TOKEN;
@@ -93,25 +73,12 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-/**
- * Builds the Vertex AI generateContent endpoint for a project and region.
- *
- * @param project - GCP project id.
- * @param location - Vertex region, e.g. `us-central1`.
- * @returns The full endpoint URL.
- */
 function vertexUrl(project: string, location: string): string {
   const host =
     location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`;
   return `https://${host}/v1/projects/${project}/locations/${location}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
 }
 
-/**
- * Extracts the generated text from a validated Vertex response.
- *
- * @param data - The parsed JSON body.
- * @returns The concatenated text, or an empty string when absent.
- */
 function extractVertexText(data: unknown): string {
   const parsed = vertexResponseSchema.safeParse(data);
   if (!parsed.success) return '';
@@ -129,12 +96,11 @@ function extractVertexText(data: unknown): string {
  * strip fences and fall back to the outermost brace-delimited span. This is
  * tolerance for known formatting habits, not for invented content — the result
  * still has to satisfy the caller's schema.
- *
- * @param raw - Raw model text.
- * @returns The JSON substring, or null when none is present.
  */
 export function extractJson(raw: string): string | null {
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(raw);
+  // No \s* before the lazy capture: two variable-width matchers that both eat
+  // whitespace force backtracking. The body is trimmed below regardless.
+  const fenced = /```(?:json)?([\s\S]*?)```/i.exec(raw);
   const body = (fenced?.[1] ?? raw).trim();
 
   const start = body.indexOf('{');
@@ -144,13 +110,7 @@ export function extractJson(raw: string): string | null {
   return body.slice(start, end + 1);
 }
 
-/**
- * Calls Gemini and returns raw text.
- *
- * @param prompt - The full prompt.
- * @param timeoutMs - Deadline in milliseconds.
- * @returns The model's text, or a typed failure.
- */
+/** Calls Gemini and returns raw text. Never throws. */
 export async function generateText(
   prompt: string,
   timeoutMs: number = AI_TIMEOUT_MS,
@@ -200,14 +160,7 @@ export async function generateText(
   }
 }
 
-/**
- * Calls Gemini and parses the response against a schema.
- *
- * @param prompt - The full prompt. Should instruct the model to return JSON.
- * @param schema - Zod schema the output must satisfy.
- * @param timeoutMs - Deadline in milliseconds.
- * @returns The validated value, or a typed failure. Never throws.
- */
+/** Calls Gemini and validates the response against a schema. Never throws. */
 export async function generateJson<T>(
   prompt: string,
   schema: z.ZodType<T>,

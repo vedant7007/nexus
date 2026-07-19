@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/dashboard/RecommendationsPanel
- *
- * Responsibility: render ranked decision recommendations. Presentational only.
- */
 import { memo } from 'react';
 
 import { ModeBadge } from '@/components/ui/ModeBadge';
@@ -14,7 +9,6 @@ import type { RecommendationDto, RecommendationsDto } from '@/lib/schemas/api';
 import type { ApiError } from '@/lib/ui/apiClient';
 import { MAX_VISIBLE_RECOMMENDATIONS } from '@/lib/ui/constants';
 
-/** Props for {@link RecommendationsPanel}. */
 export interface RecommendationsPanelProps {
   recommendations: RecommendationsDto | null;
   loading: boolean;
@@ -25,7 +19,6 @@ export interface RecommendationsPanelProps {
   acknowledged: ReadonlySet<string>;
 }
 
-/** Props for {@link RecommendationCard}. */
 interface RecommendationCardProps {
   recommendation: RecommendationDto;
   acknowledged: boolean;
@@ -39,9 +32,6 @@ interface RecommendationCardProps {
  * in the reasoning paragraph. That is the whole product in one element: the
  * engine computed "122% → 85.4%", the model only explained it, and the operator
  * should be able to see the number without reading the prose.
- *
- * @param props - The recommendation and its acknowledged state.
- * @returns The card.
  */
 function RecommendationCard({
   recommendation,
@@ -82,12 +72,7 @@ function RecommendationCard({
   );
 }
 
-/**
- * The AI decision recommendations panel.
- *
- * @param props - The recommendations, their states, and callbacks.
- * @returns The panel.
- */
+/** The AI decision recommendations panel. */
 function RecommendationsPanelImpl({
   recommendations,
   loading,

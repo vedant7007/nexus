@@ -1,11 +1,5 @@
-/**
- * @module engine/sustainability
- *
- * Responsibility: compute the venue's resource position against baseline.
- *
- * As everywhere else in the engine, the numbers and the factual drivers are
- * computed here; the AI layer only rephrases them.
- */
+// As everywhere in the engine, the numbers and factual drivers are computed
+// here; the AI layer only rephrases them.
 import type { Resources, Snapshot, SustainabilitySummary } from './types';
 
 /** Matchday baselines for a full house at this venue. */
@@ -23,11 +17,8 @@ export const BASELINE: Resources = {
 export const ENERGY_ALERT_DELTA_PCT = 5;
 
 /**
- * Summarises the venue's resource position against the matchday baseline.
- *
- * @param snapshot - The venue state to summarise.
- * @param baseline - Baseline to compare against. Defaults to {@link BASELINE}.
- * @returns Computed deltas plus factual drivers, with no generated language.
+ * Summarises the venue's resource position against the matchday baseline,
+ * as computed deltas plus factual drivers with no generated language.
  */
 export function sustainabilitySummary(
   snapshot: Snapshot,

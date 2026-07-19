@@ -1,9 +1,5 @@
 /**
- * @module ui/apiClient
- *
- * Responsibility: the browser's only door to the API.
- *
- * Two rules hold here and are what keep `any` out of the UI layer:
+ * The browser's only door to the API. Two rules keep `any` out of the UI layer:
  *
  *  1. **Every response is parsed with a Zod schema before it is returned.** A
  *     `fetch().json()` is `any` by definition; letting that spread into
@@ -56,12 +52,7 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
-/**
- * Interprets a non-OK response.
- *
- * @param response - The failed response.
- * @returns A renderable error.
- */
+// Interprets a non-OK response into a renderable error.
 async function toApiError(response: Response): Promise<ApiError> {
   try {
     const parsed = errorBodySchema.safeParse(await response.json());
@@ -73,15 +64,7 @@ async function toApiError(response: Response): Promise<ApiError> {
   return { code: 'http_error', message: `Request failed (${response.status}).` };
 }
 
-/**
- * Calls the API and validates the response against a schema.
- *
- * @param path - API path, e.g. `/api/situation`.
- * @param schema - Schema the successful response must satisfy.
- * @param getToken - Supplies the caller's ID token.
- * @param options - Method, body, and abort signal.
- * @returns The validated value, or a renderable error. Never throws.
- */
+/** Calls the API and validates the response against a schema. Never throws. */
 export async function apiFetch<T>(
   path: string,
   schema: z.ZodType<T, z.ZodTypeDef, unknown>,
@@ -103,15 +86,8 @@ export async function apiFetch<T>(
   return parseBody(response, schema);
 }
 
-/**
- * Performs the request.
- *
- * @param path - API path.
- * @param token - The caller's ID token.
- * @param options - Method, body, and abort signal.
- * @returns The response, or null when the network failed.
- * @throws {DOMException} On abort, so the caller's effect can ignore it.
- */
+// Returns null when the network failed. Re-throws a DOMException on abort so the
+// caller's effect can ignore it.
 async function send(
   path: string,
   token: string,
@@ -137,13 +113,7 @@ async function send(
   }
 }
 
-/**
- * Reads and validates a successful response body.
- *
- * @param response - The successful response.
- * @param schema - Schema the body must satisfy.
- * @returns The validated value, or a malformed-response error.
- */
+// Reads and validates a successful response body against the schema.
 async function parseBody<T>(
   response: Response,
   schema: z.ZodType<T, z.ZodTypeDef, unknown>,

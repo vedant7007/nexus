@@ -1,15 +1,9 @@
 'use client';
 
-/**
- * @module components/dashboard/DashboardView
- *
- * Responsibility: wire the data hooks to the presentational panels.
- *
- * This is the only stateful component on the dashboard. It owns the scenario
- * selection, the clock, and the acknowledged set, and hands everything else
- * down as props — which is what keeps every panel below it a pure function of
- * its inputs and testable without a network.
- */
+// The only stateful component on the dashboard: it owns the scenario selection,
+// the clock, and the acknowledged set, and hands everything else down as props —
+// which is what keeps every panel below it a pure function of its inputs and
+// testable without a network.
 import { useCallback, useState } from 'react';
 
 import { NavBar } from '@/components/NavBar';
@@ -28,11 +22,7 @@ import { SustainabilityStrip } from './SustainabilityStrip';
 import { TopBar } from './TopBar';
 import { ZoneGrid } from './ZoneGrid';
 
-/**
- * The command center.
- *
- * @returns The dashboard.
- */
+/** The command center. */
 export function DashboardView() {
   const [scenario, setScenario] = useState<ScenarioId>('normal');
   const [acknowledged, setAcknowledged] = useState<ReadonlySet<string>>(new Set());

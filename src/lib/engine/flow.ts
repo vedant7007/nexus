@@ -1,18 +1,11 @@
-/**
- * @module engine/flow
- *
- * Responsibility: model the effect of operational interventions, numerically.
- *
- * Every number the UI shows next to a recommendation ("94% → 78%") originates
- * here. The AI is handed these figures and asked to explain them; it is never
- * asked to produce them. That split is what lets a recommendation be both
- * fluent and trustworthy.
- *
- * The model is a deliberately simple conservation-of-people flow: arrivals move
- * between gates, throughput is fixed by staffing, and queues drain at the
- * surplus rate. It is not a microsimulation, and it does not pretend to be —
- * it is a defensible first-order estimate, and it is honest about its horizon.
- */
+// Models the effect of operational interventions, numerically. Every number the
+// UI shows next to a recommendation ("94% → 78%") originates here; the AI is
+// handed these figures and asked to explain them, never to produce them. That
+// split is what lets a recommendation be both fluent and trustworthy.
+//
+// The model is a deliberately simple conservation-of-people flow: arrivals move
+// between gates, throughput is fixed by staffing, queues drain at the surplus
+// rate. Not a microsimulation — a defensible, horizon-honest first-order estimate.
 import { utilizationPct } from './situation';
 import { GATE_UTILIZATION_BANDS } from './thresholds';
 import type { GateState, Mitigation, RerouteImpact, Risk, Snapshot } from './types';
@@ -32,21 +25,12 @@ export const STAFF_SURGE_UPLIFT = 0.15;
  */
 const REROUTE_STEPS: readonly number[] = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5];
 
-/** Rounds to one decimal place. */
+// Rounds to one decimal place.
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-/**
- * Models moving a share of one gate's arrivals to another gate.
- *
- * @param from - The overloaded source gate.
- * @param to - The destination gate absorbing arrivals.
- * @param pctMoved - Share of the source gate's arrivals to move, 0–1.
- * @returns Utilization before/after for both gates and the projected time in
- *   minutes to clear the source queue, or null if it does not clear.
- * @throws {RangeError} If `pctMoved` is outside 0–1.
- */
+/** Models moving a share (0–1) of one gate's arrivals to another gate. */
 export function computeRerouteImpact(
   from: GateState,
   to: GateState,
@@ -85,14 +69,7 @@ export function computeRerouteImpact(
   };
 }
 
-/**
- * Models raising a gate's throughput by a fractional uplift.
- *
- * @param gate - The gate receiving extra capacity.
- * @param uplift - Fractional increase in throughput, e.g. 0.2 for +20%.
- * @returns Utilization before and after, and the new throughput per minute.
- * @throws {RangeError} If `uplift` is negative.
- */
+/** Models raising a gate's throughput by a fractional uplift (e.g. 0.2 for +20%). */
 export function computeCapacityUplift(
   gate: GateState,
   uplift: number,
@@ -108,14 +85,9 @@ export function computeCapacityUplift(
 }
 
 /**
- * Picks the best gate to absorb rerouted arrivals.
- *
- * "Best" is the gate with the most headroom that also feeds the same zone —
- * sending fans to a gate for a different stand would create a second problem.
- *
- * @param from - The overloaded gate.
- * @param gates - All gates in the venue.
- * @returns The chosen gate, or null when no gate has usable headroom.
+ * Picks the best gate to absorb rerouted arrivals, or null when none has usable
+ * headroom. "Best" is the gate with the most headroom that also feeds the same
+ * zone — sending fans to a gate for a different stand would create a second problem.
  */
 export function findReliefGate(from: GateState, gates: readonly GateState[]): GateState | null {
   const candidates = gates
@@ -126,14 +98,8 @@ export function findReliefGate(from: GateState, gates: readonly GateState[]): Ga
   return candidates[0] ?? null;
 }
 
-/**
- * Chooses the smallest reroute share that brings a gate back under the
- * 'high' band, so the intervention is proportionate rather than maximal.
- *
- * @param from - The overloaded gate.
- * @param to - The relief gate.
- * @returns The chosen share and its modelled impact, or null if no share helps.
- */
+// Chooses the smallest reroute share that brings a gate back under the 'high'
+// band, so the intervention is proportionate rather than maximal. Null if none helps.
 function bestRerouteStep(
   from: GateState,
   to: GateState,
@@ -147,13 +113,7 @@ function bestRerouteStep(
   return null;
 }
 
-/**
- * Generates deterministic mitigation options for a gate risk.
- *
- * @param gate - The gate under pressure.
- * @param gates - All gates, used to find relief capacity.
- * @returns Mitigations ordered most-effective first. May be empty.
- */
+/** Deterministic mitigation options for a gate risk, ordered most-effective first. */
 export function gateMitigations(gate: GateState, gates: readonly GateState[]): Mitigation[] {
   const options: Mitigation[] = [];
 
@@ -199,13 +159,7 @@ export function gateMitigations(gate: GateState, gates: readonly GateState[]): M
   return options.sort((a, b) => b.effectiveness - a.effectiveness || a.id.localeCompare(b.id));
 }
 
-/**
- * Generates deterministic mitigation options for a zone crowd risk.
- *
- * @param risk - The crowd risk.
- * @param snapshot - The venue state, used to find the gates feeding the zone.
- * @returns Mitigations ordered most-effective first.
- */
+/** Deterministic mitigation options for a zone crowd risk, ordered most-effective first. */
 export function zoneMitigations(risk: Risk, snapshot: Snapshot): Mitigation[] {
   const zone = snapshot.zones.find((z) => z.id === risk.subjectId);
   if (zone === undefined) return [];
@@ -241,12 +195,8 @@ export function zoneMitigations(risk: Risk, snapshot: Snapshot): Mitigation[] {
 }
 
 /**
- * Generates mitigations for any risk, dispatching on its kind.
- *
- * @param risk - The risk to mitigate.
- * @param snapshot - The venue state.
- * @returns Mitigations ordered most-effective first. Empty when the subject is
- *   no longer present in the snapshot.
+ * Generates mitigations for any risk, dispatching on its kind. Empty when the
+ * subject is no longer present in the snapshot.
  */
 export function mitigationsFor(risk: Risk, snapshot: Snapshot): Mitigation[] {
   switch (risk.kind) {

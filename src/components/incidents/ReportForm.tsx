@@ -1,16 +1,10 @@
 'use client';
 
-/**
- * @module components/incidents/ReportForm
- *
- * Responsibility: take an incident report in any language and submit it.
- *
- * The zone selector is not a convenience — it is a required engine input. The
- * model is never asked where the incident is, because "nearest first-aid point"
- * and "is this zone already critical" are safety facts, and a language model
- * guessing a zone from prose is exactly the class of error this design exists
- * to prevent.
- */
+// The zone selector is not a convenience — it is a required engine input. The
+// model is never asked where the incident is, because "nearest first-aid point"
+// and "is this zone already critical" are safety facts, and a language model
+// guessing a zone from prose is exactly the class of error this design exists
+// to prevent.
 import { useState } from 'react';
 
 import { FormError, SelectField, TextAreaField } from '@/components/ui/Field';
@@ -19,7 +13,6 @@ import { ZONES } from '@/lib/sim/venue';
 import type { ApiError } from '@/lib/ui/apiClient';
 import { REPORT_MAX_CHARS, REPORT_MIN_CHARS } from '@/lib/ui/constants';
 
-/** Props for {@link ReportForm}. */
 export interface ReportFormProps {
   onPreview: (rawText: string, zoneId: string) => Promise<void>;
   onSubmit: (rawText: string, zoneId: string) => Promise<void>;
@@ -42,12 +35,7 @@ const EXAMPLES: readonly { text: string; lang: string }[] = [
 
 const ZONE_OPTIONS = ZONES.map((zone) => ({ value: zone.id, label: zone.name }));
 
-/**
- * One-click example reports.
- *
- * @param props - Callback receiving the chosen example.
- * @returns The example chips.
- */
+/** One-click example reports. */
 function ExampleChips({ onPick }: { onPick: (text: string) => void }) {
   return (
     <div>
@@ -70,12 +58,7 @@ function ExampleChips({ onPick }: { onPick: (text: string) => void }) {
   );
 }
 
-/**
- * The incident report form.
- *
- * @param props - Callbacks, busy state, error, and the current preview.
- * @returns The form.
- */
+/** The incident report form. */
 export function ReportForm({ onPreview, onSubmit, busy, error, preview }: ReportFormProps) {
   const [rawText, setRawText] = useState('');
   const [zoneId, setZoneId] = useState<string>(ZONES[0]?.id ?? '');

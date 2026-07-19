@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * @module components/dashboard/BriefingPanel
- *
- * Responsibility: render the situational briefing. Presentational only.
- */
 import { memo } from 'react';
 
 import { ModeBadge } from '@/components/ui/ModeBadge';
@@ -12,7 +7,6 @@ import { Panel, PanelError, PanelSkeleton } from '@/components/ui/Panel';
 import type { BriefingDto } from '@/lib/schemas/api';
 import type { ApiError } from '@/lib/ui/apiClient';
 
-/** Props for {@link BriefingPanel}. */
 export interface BriefingPanelProps {
   briefing: BriefingDto | null;
   loading: boolean;
@@ -20,12 +14,7 @@ export interface BriefingPanelProps {
   onRetry: () => void;
 }
 
-/**
- * Formats an ISO timestamp as a wall-clock time.
- *
- * @param iso - ISO-8601 timestamp.
- * @returns A local time string, or an empty string when unparseable.
- */
+/** Formats an ISO timestamp as a wall-clock time, or empty when unparseable. */
 function toClockTime(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
@@ -43,9 +32,6 @@ function toClockTime(iso: string): string {
  * Memoised: the dashboard clock re-renders its parent every few seconds, but a
  * briefing only changes on its own slow cadence, so skipping the intervening
  * renders is a real reduction in main-thread work on a constrained device.
- *
- * @param props - The briefing, its states, and a retry callback.
- * @returns The panel.
  */
 function BriefingPanelImpl({ briefing, loading, error, onRetry }: BriefingPanelProps) {
   const showError = briefing === null && error !== null;

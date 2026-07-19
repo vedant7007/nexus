@@ -1,17 +1,11 @@
 'use client';
 
-/**
- * @module components/dashboard/ZoneGrid
- *
- * Responsibility: render live zone density and gate load. Presentational only.
- *
- * The venue's 8 zones and 6 gates are static, known at build time. So the grid
- * always renders that full structure — every tile and row, by name — and fills
- * in live values as they arrive. It never swaps a short skeleton for a taller
- * populated grid, which means the panel's height is fixed from first paint and
- * contributes no layout shift. A placeholder dash reads as "measuring", not as a
- * broken value.
- */
+// The venue's 8 zones and 6 gates are static, known at build time. So the grid
+// always renders that full structure — every tile and row, by name — and fills
+// in live values as they arrive. It never swaps a short skeleton for a taller
+// populated grid, which means the panel's height is fixed from first paint and
+// contributes no layout shift. A placeholder dash reads as "measuring", not as a
+// broken value.
 import { Panel } from '@/components/ui/Panel';
 import { formatCount } from '@/lib/engine/situation';
 import { classifyGateUtilization } from '@/lib/engine/thresholds';
@@ -20,7 +14,6 @@ import { ZONE_TILE_FULL_PCT } from '@/lib/ui/constants';
 import type { GateStateDto, ZoneStateDto } from '@/lib/ui/dto';
 import { densityBand, statusOf } from '@/lib/ui/status';
 
-/** Props for {@link ZoneGrid}. */
 export interface ZoneGridProps {
   zones: readonly ZoneStateDto[];
   gates: readonly GateStateDto[];
@@ -33,9 +26,6 @@ const PENDING = '—';
 /**
  * One zone tile. Renders live values when present, placeholders otherwise, at a
  * fixed height either way.
- *
- * @param props - The zone's static name and its optional live state.
- * @returns The tile.
  */
 function ZoneTile({ name, zone }: { name: string; zone: ZoneStateDto | undefined }) {
   const status = statusOf(densityBand(zone?.densityPct ?? 0));
@@ -86,12 +76,7 @@ function ZoneTile({ name, zone }: { name: string; zone: ZoneStateDto | undefined
   );
 }
 
-/**
- * One gate row, live or pending, at a fixed height.
- *
- * @param props - The gate's static name and its optional live state.
- * @returns The row.
- */
+/** One gate row, live or pending, at a fixed height. */
 function GateRow({ name, gate }: { name: string; gate: GateStateDto | undefined }) {
   const status = statusOf(classifyGateUtilization(gate?.utilizationPct ?? 0));
 
@@ -118,9 +103,8 @@ function GateRow({ name, gate }: { name: string; gate: GateStateDto | undefined 
 /**
  * The live zone and gate readout.
  *
- * @param props - Zones and gates. `loading` is accepted for API symmetry with
- *   the other panels but is not needed: the static structure renders regardless.
- * @returns The panel.
+ * `loading` is accepted for API symmetry with the other panels but is not
+ * needed: the static structure renders regardless.
  */
 export function ZoneGrid({ zones, gates }: ZoneGridProps) {
   const zoneById = new Map(zones.map((z) => [z.id, z]));

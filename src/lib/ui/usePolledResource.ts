@@ -1,19 +1,12 @@
 'use client';
 
-/**
- * @module ui/usePolledResource
- *
- * Responsibility: fetch a resource on an interval, and model its states.
- *
- * The single piece of fetching machinery in the UI. Every data hook composes it,
- * which means retry, abort, and the loading/error/stale rules are written once
- * and behave identically on every panel.
- *
- * The state it exposes is deliberately richer than `{data, loading}`: it
- * distinguishes *no data yet* from *data that failed to refresh*. A control room
- * showing three-second-old numbers during a blip is correct; the same screen
- * blanking to a spinner because one poll failed is not.
- */
+// The single piece of fetching machinery in the UI; every data hook composes it,
+// so retry, abort, and the loading/error/stale rules behave identically everywhere.
+//
+// The state is deliberately richer than `{data, loading}`: it distinguishes *no
+// data yet* from *data that failed to refresh*. A control room showing
+// three-second-old numbers during a blip is correct; blanking to a spinner
+// because one poll failed is not.
 import { useCallback, useEffect, useState } from 'react';
 
 import type { ApiError, ApiResult } from './apiClient';
@@ -47,10 +40,7 @@ export interface PolledResource<T> {
  * has to choose between being hard to misuse and being correct when used
  * properly, correct wins — and a test pins it.
  *
- * @param fetcher - Performs the request. Must be memoised. Receives an abort signal.
- * @param intervalMs - Refresh interval. Pass 0 to fetch when inputs change only.
- * @param enabled - When false, no request is made and state is left untouched.
- * @returns The resource state and a manual refresh.
+ * Pass `intervalMs` 0 to fetch only when inputs change.
  */
 export function usePolledResource<T>(
   fetcher: (signal: AbortSignal) => Promise<ApiResult<T>>,

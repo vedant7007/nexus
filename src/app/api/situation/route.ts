@@ -3,8 +3,6 @@ import { withRoute } from '@/lib/server/handler';
 import { resolveScenario, resolveTick, situationFor } from '@/lib/server/situationService';
 
 /**
- * The deterministic situation report.
- *
  * Not rate-limited and never AI-backed: this is the authoritative safety
  * assessment, and it must stay available even when the AI budget is exhausted.
  */
