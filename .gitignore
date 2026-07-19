@@ -18,3 +18,7 @@ tsconfig.tsbuildinfo
 serviceAccount*.json
 *-key.json
 screenshots/
+
+# Untracked credential paste — never commit.
+.env copy.example
+*.example.local
