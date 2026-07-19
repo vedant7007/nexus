@@ -79,7 +79,7 @@ flowchart TD
       SVC --> REPO[(Repository interface)]
     end
 
-    AI -->|"4s timeout · Zod-validated · falls back"| GEM[Gemini 2.5-flash]
+    AI -->|"8s timeout · Zod-validated · falls back"| GEM[Gemini 2.5-flash via Vertex AI]
     REPO --> FS[(Firestore · deny-all rules)]
     H -.->|verify| FA[Firebase Auth]
 
@@ -106,17 +106,17 @@ Key directories:
 
 ## Rubric-axis mapping
 
-| Axis                         | How, with references                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **GenAI centrality**         | Briefings ([`ai/briefing.ts`](src/lib/ai/briefing.ts)), decision reasoning, and multilingual triage ([`ai/triage.ts`](src/lib/ai/triage.ts)) are all genuinely model-generated and load-bearing. Every AI route returns `mode: 'ai' \| 'rule'` so the UI shows which path served it.                                                                                                          |
-| **Safety / trustworthiness** | The LLM cannot set a severity, threshold, or crowd number — enforced by the schema shape, not convention. [`tests/ai/triage.test.ts`](tests/ai/triage.test.ts): "AI and rule modes reach identical severity" across 4 languages.                                                                                                                                                              |
-| **Resilience**               | Every AI call has a 4s timeout, Zod output validation, and a deterministic fallback ([`ai/fallbacks.ts`](src/lib/ai/fallbacks.ts)). Tested in [`tests/ai/`](tests/ai/) and end-to-end in [`e2e/demo-arc.spec.ts`](e2e/demo-arc.spec.ts) ("command center still works when the AI endpoints fail").                                                                                            |
-| **Code quality**             | TS strict, **zero `any`, zero non-null assertions**, strict ESLint (complexity, max-lines-per-function, import/order) with **zero warnings**. Layered architecture, repository interface + test double, Zod config module ([`config.ts`](src/lib/config.ts)), typed errors ([`server/errors.ts`](src/lib/server/errors.ts)), TSDoc on every export.                                           |
-| **Security**                 | Zod on every route, Firebase ID-token verification ([`server/auth.ts`](src/lib/server/auth.ts)), deny-all Firestore rules ([`firestore.rules`](firestore.rules)), nonce CSP + 6 security headers ([`middleware.ts`](src/middleware.ts), pinned by [`tests/middleware.test.ts`](tests/middleware.test.ts)), Gemini key in Secret Manager, rate-limited AI routes, `npm audit` 0 high/critical. |
-| **Testing**                  | **470 unit/integration + 11 Playwright E2E.** Engine + sim **≥95%**, overall ~86%. Route tests cover 401/400/404/429 and AI-failure/fallback paths.                                                                                                                                                                                                                                           |
-| **Accessibility**            | **Lighthouse a11y 100 on every page**, axe zero (asserted in components _and_ real-browser E2E). Semantic landmarks, one `<h1>`/page, `aria-live` on updating panels, status always paired with a text label + icon ([`ui/status.ts`](src/lib/ui/status.ts)), keyboard-operable Radix controls, `prefers-reduced-motion` honored.                                                             |
-| **Efficiency**               | **Lighthouse Perf ≥98 mobile / 100 desktop on every page.** Firebase kept off public pages, panels memoised, zero CLS, modern browserslist, `output: 'standalone'`, `min-instances=1`.                                                                                                                                                                                                        |
-| **Problem alignment**        | Crowd management, real-time decision support, multilingual assistance, accessibility, transport, and sustainability — each a first-class feature, covered deeply rather than broadly.                                                                                                                                                                                                         |
+| Axis                         | How, with references                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GenAI centrality**         | Briefings ([`ai/briefing.ts`](src/lib/ai/briefing.ts)), decision reasoning, and multilingual triage ([`ai/triage.ts`](src/lib/ai/triage.ts)) are all genuinely model-generated and load-bearing. Every AI route returns `mode: 'ai' \| 'rule'` so the UI shows which path served it.                                                                                                                                                           |
+| **Safety / trustworthiness** | The LLM cannot set a severity, threshold, or crowd number — enforced by the schema shape, not convention. [`tests/ai/triage.test.ts`](tests/ai/triage.test.ts): "AI and rule modes reach identical severity" across 4 languages.                                                                                                                                                                                                               |
+| **Resilience**               | Every AI call has a 4s timeout, Zod output validation, and a deterministic fallback ([`ai/fallbacks.ts`](src/lib/ai/fallbacks.ts)). Tested in [`tests/ai/`](tests/ai/) and end-to-end in [`e2e/demo-arc.spec.ts`](e2e/demo-arc.spec.ts) ("command center still works when the AI endpoints fail").                                                                                                                                             |
+| **Code quality**             | TS strict, **zero `any`, zero non-null assertions**, strict ESLint (complexity, max-lines-per-function, import/order) with **zero warnings**. Layered architecture, repository interface + test double, Zod config module ([`config.ts`](src/lib/config.ts)), typed errors ([`server/errors.ts`](src/lib/server/errors.ts)), TSDoc on every export.                                                                                            |
+| **Security**                 | Zod on every route, Firebase ID-token verification ([`server/auth.ts`](src/lib/server/auth.ts)), deny-all Firestore rules ([`firestore.rules`](firestore.rules)), nonce CSP + 6 security headers ([`middleware.ts`](src/middleware.ts), pinned by [`tests/middleware.test.ts`](tests/middleware.test.ts)), **Gemini via Vertex AI with a service account — no API key to store or leak**, rate-limited AI routes, `npm audit` 0 high/critical. |
+| **Testing**                  | **470 unit/integration + 11 Playwright E2E.** Engine + sim **≥95%**, overall ~86%. Route tests cover 401/400/404/429 and AI-failure/fallback paths.                                                                                                                                                                                                                                                                                            |
+| **Accessibility**            | **Lighthouse a11y 100 on every page**, axe zero (asserted in components _and_ real-browser E2E). Semantic landmarks, one `<h1>`/page, `aria-live` on updating panels, status always paired with a text label + icon ([`ui/status.ts`](src/lib/ui/status.ts)), keyboard-operable Radix controls, `prefers-reduced-motion` honored.                                                                                                              |
+| **Efficiency**               | **Lighthouse Perf ≥98 mobile / 100 desktop on every page.** Firebase kept off public pages, panels memoised, zero CLS, modern browserslist, `output: 'standalone'`, `min-instances=1`.                                                                                                                                                                                                                                                         |
+| **Problem alignment**        | Crowd management, real-time decision support, multilingual assistance, accessibility, transport, and sustainability — each a first-class feature, covered deeply rather than broadly.                                                                                                                                                                                                                                                          |
 
 ### Lighthouse (production build, mobile / desktop)
 
@@ -135,8 +135,8 @@ Key directories:
 ## Run it locally
 
 No cloud project is required. With no Firebase config the app runs in local-dev
-mode (implicit identity, no sign-in); with no Gemini key every AI feature runs in
-deterministic rule-based mode.
+mode (implicit identity, no sign-in); with no GCP credentials every AI feature
+runs in deterministic rule-based mode.
 
 ```bash
 npm install
@@ -165,13 +165,16 @@ Target: **Google Cloud Run**, region `asia-south1`, `min-instances=1`.
 
 **You provide** (NEXUS can't create cloud accounts):
 
-1. A **GCP project** with billing enabled.
+1. A **GCP project** with an **active Cloud Billing account** (Gemini via Vertex
+   AI bills to it — gemini-2.5-flash is a fraction of a cent per call).
 2. A **Firebase project** (same GCP project): enable **Authentication**
    (Email/Password + Google) and **Firestore** (Native mode).
-3. A **Gemini API key** from Google AI Studio (model is pinned to
-   `gemini-2.5-flash`).
-4. `.env.local` populated with the six `NEXT_PUBLIC_FIREBASE_*` values and
-   `GEMINI_API_KEY`.
+3. `.env.local` populated with the six `NEXT_PUBLIC_FIREBASE_*` values.
+
+**No Gemini API key.** Gemini runs through **Vertex AI**, authenticated by the
+Cloud Run service account (ADC) and billed to Cloud Billing — nothing to store,
+rotate, or leak. (Vertex also sidesteps the AI-Studio API's separate,
+region-specific prepaid-credit balance, which is unrelated to Cloud Billing.)
 
 ### One-shot script
 
@@ -181,12 +184,12 @@ gcloud config set project YOUR_PROJECT_ID
 ./scripts/deploy.sh
 ```
 
-[`scripts/deploy.sh`](scripts/deploy.sh) is idempotent: it enables the APIs,
-creates the Artifact Registry repo and the `gemini-api-key` secret, builds and
-deploys via Cloud Build (passing `NEXT_PUBLIC_FIREBASE_*` as **build args** so
-they are inlined into the client bundle), grants the runtime service account
-`roles/datastore.user` + `roles/secretmanager.secretAccessor`, deploys the
-Firestore rules, and prints the URL.
+[`scripts/deploy.sh`](scripts/deploy.sh) is idempotent: it enables the APIs
+(including Vertex AI), creates the Artifact Registry repo, builds and deploys via
+Cloud Build (passing `NEXT_PUBLIC_FIREBASE_*` as **build args** so they are
+inlined into the client bundle), grants the runtime service account
+`roles/datastore.user` + `roles/aiplatform.user`, deploys the Firestore rules,
+and prints the URL.
 
 ### Exact command sequence (what the script runs)
 
@@ -195,17 +198,15 @@ Firestore rules, and prints the URL.
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 
-# 1. Enable APIs
+# 1. Enable APIs (Vertex AI = aiplatform; no Secret Manager needed)
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com secretmanager.googleapis.com firestore.googleapis.com
+  artifactregistry.googleapis.com aiplatform.googleapis.com firestore.googleapis.com
 
 # 2. Artifact Registry repo
 gcloud artifacts repositories create nexus \
   --repository-format docker --location asia-south1
 
-# 3. Gemini key → Secret Manager  (never in git, never in the image)
-printf '%s' "$GEMINI_API_KEY" | gcloud secrets create gemini-api-key \
-  --data-file=- --replication-policy automatic
+# 3. (nothing) — Gemini needs no key/secret; Vertex uses the runtime SA.
 
 # 4. Build + deploy (NEXT_PUBLIC_* passed as BUILD ARGS via cloudbuild.yaml)
 gcloud builds submit --config cloudbuild.yaml --substitutions \
@@ -216,14 +217,14 @@ _NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",\
 _NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",\
 _NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID"
 
-# 5. Least-privilege IAM for the Cloud Run runtime SA
+# 5. Least-privilege IAM for the Cloud Run runtime SA — Firestore + Vertex only
 #    (PROJECT_NUMBER-compute@developer.gserviceaccount.com unless you set a custom SA)
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
   --member serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com \
   --role roles/datastore.user
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
   --member serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com \
-  --role roles/secretmanager.secretAccessor
+  --role roles/aiplatform.user
 
 # 6. Firestore deny-all rules
 npx firebase-tools deploy --only firestore:rules --project YOUR_PROJECT_ID
@@ -263,6 +264,6 @@ The deploy script prints this reminder with your exact host.
 ## Stack
 
 Next.js 15 (App Router) · React 19 · TypeScript strict · Tailwind v4 · Radix UI ·
-Zod · Firebase Auth + Firestore (Admin SDK) · Gemini 2.5-flash · Vitest +
+Zod · Firebase Auth + Firestore (Admin SDK) · Gemini 2.5-flash (Vertex AI) · Vitest +
 Testing Library + vitest-axe · Playwright + axe-core · Cloud Run + Cloud Build +
 Artifact Registry + Secret Manager.

@@ -4,47 +4,46 @@
  * Responsibility: the only place that talks to Gemini, and the only place that
  * decides an AI call has failed.
  *
- * Every AI feature in NEXUS routes through {@link generateJson} or
- * {@link generateText}, which guarantee four things the rest of the app relies
- * on absolutely:
+ * Gemini is reached through **Vertex AI** (`aiplatform.googleapis.com`), not the
+ * AI-Studio API. Two reasons, one of them hard-won: Vertex bills the project's
+ * Cloud Billing account directly (the AI-Studio API in some regions is gated by
+ * a separate prepaid balance that has nothing to do with Cloud Billing), and it
+ * authenticates with the runtime's own credentials — the Cloud Run service
+ * account via Application Default Credentials — so **there is no API key to
+ * store, rotate, or leak.**
  *
- *  1. **A hard timeout.** A control room cannot wait on a hanging model. Four
- *     seconds, then we fall back.
- *  2. **No throwing.** Callers get a discriminated result, never an exception.
- *     A dead-ended AI panel is a product failure, so failure must be a value
- *     the caller is forced by the type system to handle.
- *  3. **Schema validation.** Model output is untrusted input. It is parsed with
- *     Zod before any caller sees it; a shape mismatch is a failure, not a
- *     surprise `undefined` three layers away.
- *  4. **Server-only.** The API key never reaches a bundle.
+ * Every AI feature routes through {@link generateJson} or {@link generateText},
+ * which guarantee four things the rest of the app relies on absolutely:
+ *
+ *  1. **A hard timeout.** A control room cannot wait on a hanging model.
+ *  2. **No throwing.** Callers get a discriminated result, never an exception —
+ *     failure is a value the type system forces the caller to handle.
+ *  3. **Schema validation.** Model output is untrusted input, parsed with Zod
+ *     before any caller sees it.
+ *  4. **Server-only.** Credentials never reach a bundle.
  */
-import { GoogleGenerativeAI, type GenerationConfig } from '@google/generative-ai';
-import type { z } from 'zod';
+import { GoogleAuth } from 'google-auth-library';
+import { z } from 'zod';
 
 import { AI_TIMEOUT_MS, GEMINI_MODEL, serverConfig } from '../config';
 import { describeError, logger } from '../server/logger';
 
 /**
- * Generation config for every NEXUS call.
+ * Generation config for every call.
  *
  * `thinkingBudget: 0` disables gemini-2.5-flash's extended reasoning. Our tasks
  * are rephrasing computed facts into prose and translating/classifying an
  * incident — not multi-step reasoning — so thinking adds several seconds of
  * latency for no quality gain. Disabling it cut a real briefing from ~7.9s to
- * ~1.9s in testing, which is the difference between the AI path succeeding
- * inside the timeout and silently falling back to rule mode on every call.
- *
- * `thinkingConfig` is a 2.5-model field the installed SDK version does not yet
- * carry in `GenerationConfig`, so it is attached through a typed extension
- * rather than an `as` cast to keep the value checked.
+ * ~1.9s in testing, the difference between the AI path succeeding inside the
+ * timeout and silently falling back to rule mode on every call.
  */
-interface ThinkingConfig {
-  thinkingConfig: { thinkingBudget: number };
-}
-
-const GENERATION_CONFIG: GenerationConfig & ThinkingConfig = {
+const GENERATION_CONFIG = {
   thinkingConfig: { thinkingBudget: 0 },
-};
+} as const;
+
+/** OAuth scope for Vertex AI calls. */
+const CLOUD_PLATFORM_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 
 /** Why an AI call did not produce usable output. */
 export type AiFailureReason = 'not_configured' | 'timeout' | 'upstream_error' | 'invalid_output';
@@ -54,42 +53,73 @@ export type AiResult<T> =
   | { ok: true; value: T }
   | { ok: false; reason: AiFailureReason; detail: string };
 
-let cachedClient: GoogleGenerativeAI | null = null;
+/** The slice of a Vertex response we read, validated rather than trusted. */
+const vertexResponseSchema = z.object({
+  candidates: z
+    .array(
+      z.object({
+        content: z
+          .object({ parts: z.array(z.object({ text: z.string().optional() })).optional() })
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+
+let cachedAuth: GoogleAuth | null = null;
 
 /**
- * Lazily constructs the Gemini client.
+ * Acquires an access token for Vertex AI.
  *
- * @returns The client, or null when no API key is configured.
+ * On Cloud Run this comes from the service account via ADC — no configuration,
+ * no key. `GEMINI_ACCESS_TOKEN` is an explicit override for local development,
+ * where ADC may not be set up: a `gcloud auth print-access-token` value can be
+ * exported to exercise the real path without `gcloud auth application-default
+ * login`. Absent both, the caller degrades to rule mode.
+ *
+ * @returns A bearer token, or null when no credentials are available.
  */
-function getClient(): GoogleGenerativeAI | null {
-  const { GEMINI_API_KEY } = serverConfig();
-  if (GEMINI_API_KEY === undefined) return null;
-  cachedClient ??= new GoogleGenerativeAI(GEMINI_API_KEY);
-  return cachedClient;
+async function getAccessToken(): Promise<string | null> {
+  const override = process.env.GEMINI_ACCESS_TOKEN;
+  if (override !== undefined && override.length > 0) return override;
+
+  try {
+    cachedAuth ??= new GoogleAuth({ scopes: CLOUD_PLATFORM_SCOPE });
+    const token = await cachedAuth.getAccessToken();
+    return token ?? null;
+  } catch (error) {
+    logger.warn('vertex ADC token acquisition failed', { detail: describeError(error) });
+    return null;
+  }
 }
 
 /**
- * Races a promise against a timeout.
+ * Builds the Vertex AI generateContent endpoint for a project and region.
  *
- * @param promise - Work to bound.
- * @param ms - Timeout in milliseconds.
- * @returns The promise's value.
- * @throws {Error} With message 'timeout' when the deadline passes first.
+ * @param project - GCP project id.
+ * @param location - Vertex region, e.g. `us-central1`.
+ * @returns The full endpoint URL.
  */
-async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('timeout')), ms);
-      }),
-    ]);
-  } finally {
-    // Always clear: a dangling timer would keep the Node process alive past
-    // the request and delay Cloud Run scaling the instance down.
-    if (timer !== undefined) clearTimeout(timer);
-  }
+function vertexUrl(project: string, location: string): string {
+  const host =
+    location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`;
+  return `https://${host}/v1/projects/${project}/locations/${location}/publishers/google/models/${GEMINI_MODEL}:generateContent`;
+}
+
+/**
+ * Extracts the generated text from a validated Vertex response.
+ *
+ * @param data - The parsed JSON body.
+ * @returns The concatenated text, or an empty string when absent.
+ */
+function extractVertexText(data: unknown): string {
+  const parsed = vertexResponseSchema.safeParse(data);
+  if (!parsed.success) return '';
+  const parts = parsed.data.candidates?.[0]?.content?.parts ?? [];
+  return parts
+    .map((part) => part.text ?? '')
+    .join('')
+    .trim();
 }
 
 /**
@@ -125,28 +155,48 @@ export async function generateText(
   prompt: string,
   timeoutMs: number = AI_TIMEOUT_MS,
 ): Promise<AiResult<string>> {
-  const client = getClient();
-  if (client === null) {
-    return { ok: false, reason: 'not_configured', detail: 'GEMINI_API_KEY is not set' };
+  const { FIREBASE_PROJECT_ID: project, GEMINI_LOCATION: location } = serverConfig();
+  if (project === undefined) {
+    return { ok: false, reason: 'not_configured', detail: 'no GCP project configured' };
   }
 
-  try {
-    const model = client.getGenerativeModel({
-      model: GEMINI_MODEL,
-      generationConfig: GENERATION_CONFIG,
-    });
-    const response = await withTimeout(model.generateContent(prompt), timeoutMs);
-    const text = response.response.text().trim();
+  const token = await getAccessToken();
+  if (token === null) {
+    return { ok: false, reason: 'not_configured', detail: 'no Google credentials available' };
+  }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(vertexUrl(project, location), {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: GENERATION_CONFIG,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const detail = `HTTP ${response.status}`;
+      logger.warn('vertex call failed', { reason: 'upstream_error', detail });
+      return { ok: false, reason: 'upstream_error', detail };
+    }
+
+    const text = extractVertexText(await response.json());
     if (text.length === 0) {
       return { ok: false, reason: 'invalid_output', detail: 'model returned empty text' };
     }
     return { ok: true, value: text };
   } catch (error) {
-    const detail = describeError(error);
-    const reason: AiFailureReason = detail.includes('timeout') ? 'timeout' : 'upstream_error';
-    logger.warn('gemini call failed', { reason, detail });
-    return { ok: false, reason, detail };
+    // AbortController fires an AbortError when the deadline passes.
+    const reason: AiFailureReason =
+      error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'upstream_error';
+    logger.warn('vertex call failed', { reason, detail: describeError(error) });
+    return { ok: false, reason, detail: describeError(error) };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -192,7 +242,7 @@ export async function generateJson<T>(
   return { ok: true, value: result.data };
 }
 
-/** Resets the memoised client. Test-only seam. */
+/** Resets the memoised auth client. Test-only seam. */
 export function resetAiClient(): void {
-  cachedClient = null;
+  cachedAuth = null;
 }

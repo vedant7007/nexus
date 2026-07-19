@@ -24,7 +24,6 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@google/generative-ai": "0.24.1",
     "@radix-ui/react-dialog": "1.1.6",
     "@radix-ui/react-label": "2.1.2",
     "@radix-ui/react-select": "2.1.6",
@@ -34,6 +33,7 @@
     "@radix-ui/react-visually-hidden": "1.1.2",
     "firebase": "11.3.1",
     "firebase-admin": "13.1.0",
+    "google-auth-library": "9.15.1",
     "next": "15.5.20",
     "react": "19.0.0",
     "react-dom": "19.0.0",

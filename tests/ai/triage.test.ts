@@ -208,7 +208,7 @@ describe('triageIncident — AI path', () => {
 
 describe('triageIncident — fallback path', () => {
   it.each([
-    ['not_configured', 'GEMINI_API_KEY is not set'],
+    ['not_configured', 'no GCP project configured'],
     ['timeout', 'timeout'],
     ['upstream_error', 'HTTP 503'],
     ['invalid_output', 'schema mismatch: proposedType'],

@@ -2,13 +2,14 @@
 #
 # The NEXT_PUBLIC_* substitutions are passed as Docker BUILD ARGS (not runtime
 # env) because Next.js inlines them into the client bundle during `next build`.
-# GEMINI_API_KEY is the opposite: it is a server-only secret and is attached at
-# deploy time from Secret Manager so it never enters the image.
+# Gemini needs no secret at all: it runs through Vertex AI, authenticated by the
+# Cloud Run service account (ADC) and billed to Cloud Billing.
 
 substitutions:
   _REGION: asia-south1
   _SERVICE: nexus
   _REPO: nexus
+  _GEMINI_LOCATION: us-central1
   _NEXT_PUBLIC_FIREBASE_API_KEY: ''
   _NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ''
   _NEXT_PUBLIC_FIREBASE_PROJECT_ID: ''
@@ -67,5 +68,8 @@ steps:
       - '--memory=512Mi'
       - '--cpu=1'
       - '--port=8080'
-      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest'
-      - '--set-env-vars=FIREBASE_PROJECT_ID=${PROJECT_ID}'
+      # Gemini runs through Vertex AI, authenticated by the Cloud Run service
+      # account (ADC) and billed to the project's Cloud Billing — no API key
+      # secret. FIREBASE_PROJECT_ID names the project Vertex bills; GEMINI_LOCATION
+      # picks the Vertex region.
+      - '--set-env-vars=FIREBASE_PROJECT_ID=${PROJECT_ID},GEMINI_LOCATION=${_GEMINI_LOCATION}'

@@ -41,12 +41,14 @@ export const AI_RATE_LIMIT_PER_MIN = 30;
 
 const serverSchema = z.object({
   /**
-   * Absent in local development and in tests, which is legitimate: every AI
-   * feature has a deterministic fallback, so a missing key degrades the app to
+   * The GCP project Vertex AI bills and authenticates against. Absent in tests
+   * and in local dev without a project, which is legitimate: every AI feature
+   * has a deterministic fallback, so a missing project degrades the app to
    * rule-based mode rather than breaking it.
    */
-  GEMINI_API_KEY: z.string().min(1).optional(),
   FIREBASE_PROJECT_ID: z.string().min(1).optional(),
+  /** Vertex AI region. gemini-2.5-flash is available in us-central1. */
+  GEMINI_LOCATION: z.string().min(1).default('us-central1'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   /**
    * Explicit, opt-in bypass of token verification, for the E2E build only.
@@ -93,9 +95,9 @@ export function serverConfig(): ServerConfig {
   }
   if (cachedServer === null) {
     cachedServer = serverSchema.parse({
-      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
       FIREBASE_PROJECT_ID:
         process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      GEMINI_LOCATION: process.env.GEMINI_LOCATION,
       NODE_ENV: process.env.NODE_ENV,
       AUTH_BYPASS: process.env.AUTH_BYPASS,
     });
@@ -137,10 +139,15 @@ export function isFirebaseConfigured(): boolean {
 /**
  * Reports whether live Gemini calls are possible.
  *
- * @returns True when an API key is configured; false means rule-based mode.
+ * Vertex AI needs a project to bill and authenticate against; credentials
+ * themselves come from ADC at call time (the Cloud Run service account), so a
+ * project id is the one thing that must be configured up front. Without it, or
+ * without runtime credentials, every AI feature degrades to rule-based mode.
+ *
+ * @returns True when a GCP project is configured; false means rule-based mode.
  */
 export function isAiConfigured(): boolean {
-  return Boolean(serverConfig().GEMINI_API_KEY);
+  return Boolean(serverConfig().FIREBASE_PROJECT_ID);
 }
 
 /** Resets memoised config. Test-only seam for exercising env permutations. */
