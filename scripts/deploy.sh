@@ -102,6 +102,16 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member "serviceAccount:${RUNTIME_SA}" \
   --role roles/aiplatform.user --condition None >/dev/null
 
+# ── 5b. Make the service publicly invokable (self-heal) ───────────────────────
+# `gcloud run deploy --allow-unauthenticated` can silently skip binding allUsers
+# when the Cloud Build service account lacks run.setIamPolicy, leaving the
+# service returning a Google-frontend 403. Re-assert the binding here, where the
+# script runs as the (owner) user, so a re-run always fixes it.
+echo "▶ Ensuring public (unauthenticated) invoker access…"
+gcloud run services add-iam-policy-binding "${SERVICE}" \
+  --region "${REGION}" --project "${PROJECT_ID}" \
+  --member allUsers --role roles/run.invoker >/dev/null
+
 # ── 6. Firestore security rules ───────────────────────────────────────────────
 # The rules deny all client access (the Admin SDK is the only reader). Deploy
 # them with the Firebase CLI if it is installed; otherwise print the reminder.
