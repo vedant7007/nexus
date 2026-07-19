@@ -1,11 +1,17 @@
 # NEXUS — AI Command Center for Stadium Operations
 
-**Live:** _`<CLOUD_RUN_URL>` — pending deploy (see [Deploy](#deploy))_
+**▶ Live:** **https://nexus-zuxwfnsdga-el.a.run.app** (Google Cloud Run)
 
 NEXUS is the AI teammate in a FIFA World Cup 2026 stadium control room. It watches
 every operational feed, **spots crowd danger before it happens, tells you what to
 do and why, and lets any volunteer report an incident in any language and get an
 instant triaged response.**
+
+> **Trying it as a reviewer?** Create an account on the
+> [login page](https://nexus-zuxwfnsdga-el.a.run.app/login) (email + password, no
+> confirmation step), use **Continue with Google**, or sign in with the demo
+> account **`demo@nexus.app` / `NexusDemo2026!`**. Then pick the _“Gate C surge”_
+> scenario and follow the 20-second demo below.
 
 ---
 
@@ -24,6 +30,14 @@ instant triaged response.**
    Response** — with the rule that fired quoted for audit.
 
 That whole arc works **with the AI switched off** (rule-based mode) — see below.
+
+## Screens
+
+|                        Command center — Gate C surge                         |                       Multilingual incident triage                       |
+| :--------------------------------------------------------------------------: | :----------------------------------------------------------------------: |
+| ![Command center dashboard during a Gate C surge](docs/images/dashboard.png) | ![Incident copilot triaging a Spanish report](docs/images/incidents.png) |
+
+<p align="center"><img src="docs/images/landing.png" alt="NEXUS landing page" width="820"></p>
 
 ## The one idea that makes this trustworthy
 
@@ -110,10 +124,10 @@ Key directories:
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **GenAI centrality**         | Briefings ([`ai/briefing.ts`](src/lib/ai/briefing.ts)), decision reasoning, and multilingual triage ([`ai/triage.ts`](src/lib/ai/triage.ts)) are all genuinely model-generated and load-bearing. Every AI route returns `mode: 'ai' \| 'rule'` so the UI shows which path served it.                                                                                                                                                           |
 | **Safety / trustworthiness** | The LLM cannot set a severity, threshold, or crowd number — enforced by the schema shape, not convention. [`tests/ai/triage.test.ts`](tests/ai/triage.test.ts): "AI and rule modes reach identical severity" across 4 languages.                                                                                                                                                                                                               |
-| **Resilience**               | Every AI call has a 4s timeout, Zod output validation, and a deterministic fallback ([`ai/fallbacks.ts`](src/lib/ai/fallbacks.ts)). Tested in [`tests/ai/`](tests/ai/) and end-to-end in [`e2e/demo-arc.spec.ts`](e2e/demo-arc.spec.ts) ("command center still works when the AI endpoints fail").                                                                                                                                             |
+| **Resilience**               | Every AI call has an 8s timeout, Zod output validation, and a deterministic fallback ([`ai/fallbacks.ts`](src/lib/ai/fallbacks.ts)). Tested in [`tests/ai/`](tests/ai/) and end-to-end in [`e2e/demo-arc.spec.ts`](e2e/demo-arc.spec.ts) ("command center still works when the AI endpoints fail").                                                                                                                                            |
 | **Code quality**             | TS strict, **zero `any`, zero non-null assertions**, strict ESLint (complexity, max-lines-per-function, import/order) with **zero warnings**. Layered architecture, repository interface + test double, Zod config module ([`config.ts`](src/lib/config.ts)), typed errors ([`server/errors.ts`](src/lib/server/errors.ts)), TSDoc on every export.                                                                                            |
 | **Security**                 | Zod on every route, Firebase ID-token verification ([`server/auth.ts`](src/lib/server/auth.ts)), deny-all Firestore rules ([`firestore.rules`](firestore.rules)), nonce CSP + 6 security headers ([`middleware.ts`](src/middleware.ts), pinned by [`tests/middleware.test.ts`](tests/middleware.test.ts)), **Gemini via Vertex AI with a service account — no API key to store or leak**, rate-limited AI routes, `npm audit` 0 high/critical. |
-| **Testing**                  | **470 unit/integration + 11 Playwright E2E.** Engine + sim **≥95%**, overall ~86%. Route tests cover 401/400/404/429 and AI-failure/fallback paths.                                                                                                                                                                                                                                                                                            |
+| **Testing**                  | **483 unit/integration + 11 Playwright E2E.** Engine + sim **≥95%**, overall ~85%. Route tests cover 401/400/404/429 and AI-failure/fallback paths.                                                                                                                                                                                                                                                                                            |
 | **Accessibility**            | **Lighthouse a11y 100 on every page**, axe zero (asserted in components _and_ real-browser E2E). Semantic landmarks, one `<h1>`/page, `aria-live` on updating panels, status always paired with a text label + icon ([`ui/status.ts`](src/lib/ui/status.ts)), keyboard-operable Radix controls, `prefers-reduced-motion` honored.                                                                                                              |
 | **Efficiency**               | **Lighthouse Perf ≥98 mobile / 100 desktop on every page.** Firebase kept off public pages, panels memoised, zero CLS, modern browserslist, `output: 'standalone'`, `min-instances=1`.                                                                                                                                                                                                                                                         |
 | **Problem alignment**        | Crowd management, real-time decision support, multilingual assistance, accessibility, transport, and sustainability — each a first-class feature, covered deeply rather than broadly.                                                                                                                                                                                                                                                          |
@@ -148,7 +162,7 @@ Quality gates:
 ```bash
 npm run typecheck      # tsc --noEmit (strict)
 npm run lint           # strict ESLint, zero warnings
-npm run test           # 470 unit/integration tests
+npm run test           # 483 unit/integration tests
 npm run test:coverage  # with the ≥95% engine/sim gate
 npm run e2e            # Playwright: demo arc + AI-down degradation
 npm run build          # production build
@@ -266,4 +280,8 @@ The deploy script prints this reminder with your exact host.
 Next.js 15 (App Router) · React 19 · TypeScript strict · Tailwind v4 · Radix UI ·
 Zod · Firebase Auth + Firestore (Admin SDK) · Gemini 2.5-flash (Vertex AI) · Vitest +
 Testing Library + vitest-axe · Playwright + axe-core · Cloud Run + Cloud Build +
-Artifact Registry + Secret Manager.
+Artifact Registry.
+
+## License
+
+[MIT](LICENSE) © 2026 Vedant.
