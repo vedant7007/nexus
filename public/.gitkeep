@@ -1,0 +1,4 @@
+# Keeps the public/ directory present so the Dockerfile's
+# `COPY --from=builder /app/public ./public` step succeeds. NEXUS serves its
+# favicon from the App Router (src/app/icon.svg), so there are no static assets
+# here yet — this file only guarantees the directory exists in the build context.
