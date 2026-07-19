@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "description": "NEXUS - AI Command Center for Stadium Operations",
+  "author": "Vedant <vedantidlgave16@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "genai",
+    "stadium-operations",
+    "crowd-safety",
+    "nextjs",
+    "vertex-ai",
+    "typescript"
+  ],
   "//browserslist": "A control-room console runs on modern, managed browsers. Targeting them lets the compiler skip legacy polyfills and down-transpiling, trimming bundle bytes and main-thread parse time on every page.",
   "browserslist": [
     "chrome >= 111",

@@ -149,7 +149,7 @@ export interface Recommendation {
   action: string;
   /** Quantified effect, computed by the engine. Never model-generated. */
   impact: string;
-  /** Natural-language rationale and trade-offs. AI-generated or templated. */
+  /** Natural-language rationale and trade-offs. Model-generated or templated. */
   reasoning: string;
 }
 
