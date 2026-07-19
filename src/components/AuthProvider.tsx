@@ -13,6 +13,7 @@
 import {
   GoogleAuthProvider,
   type User,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -34,6 +35,7 @@ export interface AuthState {
   /** Supplies a fresh ID token, or null when signed out. */
   getToken: TokenProvider;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -85,6 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   }, []);
 
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    const auth = getAuthClient();
+    if (auth === null) throw new Error('Authentication is not configured.');
+    await createUserWithEmailAndPassword(auth, email, password);
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     const auth = getAuthClient();
     if (auth === null) throw new Error('Authentication is not configured.');
@@ -97,8 +105,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ user, loading, configured, getToken, signInWithEmail, signInWithGoogle, signOut }),
-    [user, loading, configured, getToken, signInWithEmail, signInWithGoogle, signOut],
+    () => ({
+      user,
+      loading,
+      configured,
+      getToken,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      signOut,
+    }),
+    [
+      user,
+      loading,
+      configured,
+      getToken,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      signOut,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

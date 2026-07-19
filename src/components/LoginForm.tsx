@@ -20,6 +20,9 @@ const ERROR_COPY: Record<string, string> = {
   'auth/wrong-password': 'That email and password do not match an account.',
   'auth/too-many-requests': 'Too many attempts. Wait a moment and try again.',
   'auth/popup-closed-by-user': 'Sign-in was cancelled.',
+  'auth/popup-blocked': 'Your browser blocked the sign-in popup. Allow popups and try again.',
+  'auth/email-already-in-use': 'An account with that email already exists — sign in instead.',
+  'auth/weak-password': 'Choose a password of at least 6 characters.',
 };
 
 /**
@@ -49,15 +52,73 @@ function RedirectingNotice() {
   );
 }
 
+const PRIMARY_BUTTON =
+  'w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-void)] transition-colors hover:bg-[var(--color-accent-strong)] disabled:opacity-60';
+
+/** The "or" divider between the email form and the Google button. */
+function OrDivider() {
+  return (
+    <div className="my-5 flex items-center gap-3">
+      <span className="h-px flex-1 bg-[var(--color-border)]" />
+      <span className="text-xs text-[var(--color-ink-dim)]">or</span>
+      <span className="h-px flex-1 bg-[var(--color-border)]" />
+    </div>
+  );
+}
+
+/** The Google sign-in button. */
+function GoogleButton({ busy, onClick }: { busy: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className="w-full rounded-lg border border-[var(--color-border-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-overlay)] disabled:opacity-60"
+    >
+      Continue with Google
+    </button>
+  );
+}
+
+/** The footer link that flips between sign-in and create-account. */
+function ModeToggle({
+  signup,
+  busy,
+  onToggle,
+}: {
+  signup: boolean;
+  busy: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <p className="mt-6 text-center text-sm text-[var(--color-ink-dim)]">
+      {signup ? 'Already have access?' : 'New here?'}{' '}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onToggle}
+        className="font-semibold text-[var(--color-accent-strong)] transition-colors hover:underline disabled:opacity-60"
+      >
+        {signup ? 'Sign in' : 'Create an account'}
+      </button>
+    </p>
+  );
+}
+
 /**
- * The sign-in form.
+ * The sign-in / create-account form.
+ *
+ * One form serves both modes: operators returning to the console sign in, and
+ * first-time visitors (including judges hitting the live URL) create an account
+ * with no console step. Google sign-in is offered alongside.
  *
  * @returns The form.
  */
 export function LoginForm() {
-  const { signInWithEmail, signInWithGoogle, user, configured } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle, user, configured } = useAuth();
   const router = useRouter();
 
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +137,8 @@ export function LoginForm() {
 
   if (redirecting) return <RedirectingNotice />;
 
+  const signup = mode === 'signup';
+
   const run = async (action: () => Promise<void>): Promise<void> => {
     setBusy(true);
     setError(null);
@@ -91,7 +154,9 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <h1 className="text-2xl font-bold tracking-tight">Sign in to NEXUS</h1>
+      <h1 className="text-2xl font-bold tracking-tight">
+        {signup ? 'Create your NEXUS access' : 'Sign in to NEXUS'}
+      </h1>
       <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
         Venue operations access for matchday control.
       </p>
@@ -100,7 +165,7 @@ export function LoginForm() {
         className="mt-8 space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          void run(() => signInWithEmail(email, password));
+          void run(() => (signup ? signUpWithEmail : signInWithEmail)(email, password));
         }}
       >
         <TextField
@@ -114,7 +179,7 @@ export function LoginForm() {
         <TextField
           label="Password"
           type="password"
-          autoComplete="current-password"
+          autoComplete={signup ? 'new-password' : 'current-password'}
           value={password}
           onChange={setPassword}
           required
@@ -122,29 +187,23 @@ export function LoginForm() {
 
         <FormError message={error} />
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-void)] transition-colors hover:bg-[var(--color-accent-strong)] disabled:opacity-60"
-        >
-          {busy ? 'Signing in…' : 'Sign in'}
+        <button type="submit" disabled={busy} className={PRIMARY_BUTTON}>
+          {busy ? 'Working…' : signup ? 'Create account' : 'Sign in'}
         </button>
       </form>
 
-      <div className="my-5 flex items-center gap-3">
-        <span className="h-px flex-1 bg-[var(--color-border)]" />
-        <span className="text-xs text-[var(--color-ink-dim)]">or</span>
-        <span className="h-px flex-1 bg-[var(--color-border)]" />
-      </div>
+      <OrDivider />
 
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void run(signInWithGoogle)}
-        className="w-full rounded-lg border border-[var(--color-border-strong)] px-4 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-overlay)] disabled:opacity-60"
-      >
-        Continue with Google
-      </button>
+      <GoogleButton busy={busy} onClick={() => void run(signInWithGoogle)} />
+
+      <ModeToggle
+        signup={signup}
+        busy={busy}
+        onToggle={() => {
+          setMode(signup ? 'signin' : 'signup');
+          setError(null);
+        }}
+      />
     </div>
   );
 }
