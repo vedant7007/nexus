@@ -1,4 +1,6 @@
-# NEXUS — AI Command Center for Stadium Operations
+# NEXUS: AI Command Center for Stadium Operations
+
+[![Live demo](https://img.shields.io/badge/Live_demo-open-0EA5E9?style=flat-square&logo=googlecloud&logoColor=white)](https://nexus-zuxwfnsdga-el.a.run.app) [![CI](https://github.com/vedant7007/nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/vedant7007/nexus/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-101A33?style=flat-square)](LICENSE)
 
 **▶ Live:** **https://nexus-zuxwfnsdga-el.a.run.app** (Google Cloud Run)
 
@@ -21,19 +23,19 @@ instant triaged response.**
 2. Pick the **"Gate C surge"** scenario from the picker.
 3. Watch the engine react: the status pill climbs **Normal → High → Critical** and
    pulses, the schematic tints, and the **AI briefing rewrites itself in plain
-   language** — _"Gate C is taking 215 arrivals a minute but can only process 195…
+   language**: _"Gate C is taking 215 arrivals a minute but can only process 195…
    the queue is growing by 20 people a minute."_
 4. A **recommendation** appears with reasoning **and a real, engine-computed impact
    number**: _"Open the overflow lane at Gate C. Utilization 110.1% → 91.7%."_
 5. Switch to **Incidents**, type _"hay una persona desmayada en la sección 114"_,
    and watch it get detected as Spanish, translated, and triaged **SEV-1 → Medical
-   Response** — with the rule that fired quoted for audit.
+   Response**: with the rule that fired quoted for audit.
 
-That whole arc works **with the AI switched off** (rule-based mode) — see below.
+That whole arc works **with the AI switched off** (rule-based mode): see below.
 
 ## Screens
 
-|                        Command center — Gate C surge                         |                       Multilingual incident triage                       |
+|                        Command center, Gate C surge                         |                       Multilingual incident triage                       |
 | :--------------------------------------------------------------------------: | :----------------------------------------------------------------------: |
 | ![Command center dashboard during a Gate C surge](docs/images/dashboard.png) | ![Incident copilot triaging a Spanish report](docs/images/incidents.png) |
 
@@ -43,7 +45,7 @@ That whole arc works **with the AI switched off** (rule-based mode) — see belo
 
 > **The AI has no shape in which to express a safety number.**
 
-Generative AI is the product's brain — it writes the briefings, explains the
+Generative AI is the product's brain, it writes the briefings, explains the
 decisions, and understands incident reports in 30+ languages. But it is
 **structurally prevented** from deciding anything safety-critical:
 
@@ -66,7 +68,7 @@ Spanish, Bengali, and Hindi.** With Gemini switched off entirely, _"hay una pers
 desmayada"_ is still SEV-1, still routed to Medical Response.
 
 The [`/methodology`](src/app/methodology/page.tsx) page renders this claim, the
-density thresholds and their sources, and the severity rules — every number
+density thresholds and their sources, and the severity rules, every number
 imported from the engine, not transcribed.
 
 ---
@@ -103,7 +105,7 @@ flowchart TD
 **Layering is strict:** route → `withRoute` → service → engine/ai/repository.
 The engine is a pure function of its inputs; the simulator is a pure function of
 `(scenario, tick)`; the AI is always last and always optional. The server owns
-every safety-critical value — the client never computes one.
+every safety-critical value, the client never computes one.
 
 Key directories:
 
@@ -123,14 +125,14 @@ Key directories:
 | Axis                         | How, with references                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **GenAI centrality**         | Briefings ([`ai/briefing.ts`](src/lib/ai/briefing.ts)), decision reasoning, and multilingual triage ([`ai/triage.ts`](src/lib/ai/triage.ts)) are all genuinely model-generated and load-bearing. Every AI route returns `mode: 'ai' \| 'rule'` so the UI shows which path served it.                                                                                                                                                           |
-| **Safety / trustworthiness** | The LLM cannot set a severity, threshold, or crowd number — enforced by the schema shape, not convention. [`tests/ai/triage.test.ts`](tests/ai/triage.test.ts): "AI and rule modes reach identical severity" across 4 languages.                                                                                                                                                                                                               |
+| **Safety / trustworthiness** | The LLM cannot set a severity, threshold, or crowd number, enforced by the schema shape, not convention. [`tests/ai/triage.test.ts`](tests/ai/triage.test.ts): "AI and rule modes reach identical severity" across 4 languages.                                                                                                                                                                                                               |
 | **Resilience**               | Every AI call has an 8s timeout, Zod output validation, and a deterministic fallback ([`ai/fallbacks.ts`](src/lib/ai/fallbacks.ts)). Tested in [`tests/ai/`](tests/ai/) and end-to-end in [`e2e/demo-arc.spec.ts`](e2e/demo-arc.spec.ts) ("command center still works when the AI endpoints fail").                                                                                                                                            |
 | **Code quality**             | TS strict, **zero `any`, zero non-null assertions**, strict ESLint (complexity, max-lines-per-function, import/order) with **zero warnings**. Layered architecture, repository interface + test double, Zod config module ([`config.ts`](src/lib/config.ts)), typed errors ([`server/errors.ts`](src/lib/server/errors.ts)), TSDoc on every export.                                                                                            |
-| **Security**                 | Zod on every route, Firebase ID-token verification ([`server/auth.ts`](src/lib/server/auth.ts)), deny-all Firestore rules ([`firestore.rules`](firestore.rules)), nonce CSP + 6 security headers ([`middleware.ts`](src/middleware.ts), pinned by [`tests/middleware.test.ts`](tests/middleware.test.ts)), **Gemini via Vertex AI with a service account — no API key to store or leak**, rate-limited AI routes, `npm audit` 0 high/critical. |
+| **Security**                 | Zod on every route, Firebase ID-token verification ([`server/auth.ts`](src/lib/server/auth.ts)), deny-all Firestore rules ([`firestore.rules`](firestore.rules)), nonce CSP + 6 security headers ([`middleware.ts`](src/middleware.ts), pinned by [`tests/middleware.test.ts`](tests/middleware.test.ts)), **Gemini via Vertex AI with a service account, no API key to store or leak**, rate-limited AI routes, `npm audit` 0 high/critical. |
 | **Testing**                  | **483 unit/integration + 11 Playwright E2E.** Engine + sim **≥95%**, overall ~85%. Route tests cover 401/400/404/429 and AI-failure/fallback paths.                                                                                                                                                                                                                                                                                            |
 | **Accessibility**            | **Lighthouse a11y 100 on every page**, axe zero (asserted in components _and_ real-browser E2E). Semantic landmarks, one `<h1>`/page, `aria-live` on updating panels, status always paired with a text label + icon ([`ui/status.ts`](src/lib/ui/status.ts)), keyboard-operable Radix controls, `prefers-reduced-motion` honored.                                                                                                              |
 | **Efficiency**               | **Lighthouse Perf ≥98 mobile / 100 desktop on every page.** Firebase kept off public pages, panels memoised, zero CLS, modern browserslist, `output: 'standalone'`, `min-instances=1`.                                                                                                                                                                                                                                                         |
-| **Problem alignment**        | Crowd management, real-time decision support, multilingual assistance, accessibility, transport, and sustainability — each a first-class feature, covered deeply rather than broadly.                                                                                                                                                                                                                                                          |
+| **Problem alignment**        | Crowd management, real-time decision support, multilingual assistance, accessibility, transport, and sustainability, each a first-class feature, covered deeply rather than broadly.                                                                                                                                                                                                                                                          |
 
 ### Lighthouse (production build, mobile / desktop)
 
@@ -180,13 +182,13 @@ Target: **Google Cloud Run**, region `asia-south1`, `min-instances=1`.
 **You provide** (NEXUS can't create cloud accounts):
 
 1. A **GCP project** with an **active Cloud Billing account** (Gemini via Vertex
-   AI bills to it — gemini-2.5-flash is a fraction of a cent per call).
+   AI bills to it, gemini-2.5-flash is a fraction of a cent per call).
 2. A **Firebase project** (same GCP project): enable **Authentication**
    (Email/Password + Google) and **Firestore** (Native mode).
 3. `.env.local` populated with the six `NEXT_PUBLIC_FIREBASE_*` values.
 
 **No Gemini API key.** Gemini runs through **Vertex AI**, authenticated by the
-Cloud Run service account (ADC) and billed to Cloud Billing — nothing to store,
+Cloud Run service account (ADC) and billed to Cloud Billing, nothing to store,
 rotate, or leak. (Vertex also sidesteps the AI-Studio API's separate,
 region-specific prepaid-credit balance, which is unrelated to Cloud Billing.)
 
@@ -220,7 +222,7 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
 gcloud artifacts repositories create nexus \
   --repository-format docker --location asia-south1
 
-# 3. (nothing) — Gemini needs no key/secret; Vertex uses the runtime SA.
+# 3. (nothing) - Gemini needs no key/secret; Vertex uses the runtime SA.
 
 # 4. Build + deploy (NEXT_PUBLIC_* passed as BUILD ARGS via cloudbuild.yaml)
 gcloud builds submit --config cloudbuild.yaml --substitutions \
@@ -231,7 +233,7 @@ _NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",\
 _NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",\
 _NEXT_PUBLIC_FIREBASE_APP_ID="$NEXT_PUBLIC_FIREBASE_APP_ID"
 
-# 5. Least-privilege IAM for the Cloud Run runtime SA — Firestore + Vertex only
+# 5. Least-privilege IAM for the Cloud Run runtime SA - Firestore + Vertex only
 #    (PROJECT_NUMBER-compute@developer.gserviceaccount.com unless you set a custom SA)
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
   --member serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com \
@@ -264,13 +266,13 @@ The deploy script prints this reminder with your exact host.
   deployment**, and [`tests/api/auth.test.ts`](tests/api/auth.test.ts) asserts a
   production request without the flag is always rejected. In that build the AI
   rate limiter is also skipped, because every request shares one synthetic
-  identity — the real build enforces it, and the route tests cover it.
+  identity, the real build enforces it, and the route tests cover it.
 - **`npm audit`.** Zero **high/critical**. The remaining ~10 **moderate**
   advisories are all dev-only transitive dependencies of `firebase-admin` and
   `next` (they never ship in the container). `npm audit --audit-level=high`
   exits clean.
 - **The simulator is fake, and says so.** The operational feed is a seeded
-  deterministic simulation — but it conserves people, models a transit delay as
+  deterministic simulation, but it conserves people, models a transit delay as
   the same crowd arriving later and tighter, and is calibrated so a normal
   matchday peaks at "high" (never a permanently-critical dashboard). The
   [`/methodology`](src/app/methodology/page.tsx) page is explicit about this.

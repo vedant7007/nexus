@@ -32,3 +32,5 @@ screenshots/
 .env.local.*
 .env.*.bak
 *.audit-bak
+
+.claude/
